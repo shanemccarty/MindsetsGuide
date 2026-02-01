@@ -179,5 +179,3 @@ Want to test your ability to detect misinformation? Take the [Misinformation Sus
 ---
 
 ## References {.unnumbered}
-
-Ho, E. H., Hagmann, D., & Loewenstein, G. (2021). Measuring information preferences. *Management Science*, *67*(1), 126--145. <https://doi.org/10.1287/mnsc.2019.3554>
