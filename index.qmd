@@ -1,0 +1,82 @@
+# Prologue {.unnumbered}
+
+Welcome to **Know Your Mindsets: An Interactive Guide** for PH 322 — Communicating Health Information in the Digital Age at Binghamton University. This course is part of the [public health minor](https://www.binghamton.edu/decker/public-health/academics/minor.html), which is offered by Decker College's Division of Public Health.
+
+## About the Course
+
+*Where did you get that information? Can I trust them? How do I know they're not lying to me?* We navigate questions like these every day --- when reading the news, scrolling social media, or deciding whether to follow a doctor's advice. **PH 322 — Communicating Health Information in the Digital Age** explores these real-world challenges by introducing the theories, strategies, and tools used to design and evaluate health messages across media platforms. Through hands-on projects and critical analysis, you will learn how to create messages that are accurate, persuasive, culturally relevant, and ethically grounded --- while also learning how to recognize misinformation and manipulation.
+
+At its core, health communication is about more than sending messages --- it is about achieving **shared understanding**. Communication is the *process* through which we exchange information, but shared understanding is the *outcome* we seek. To achieve shared understanding, we must **know ourselves** and **know others** so that we can send and receive health messages effectively. This guide is designed to help you do both: by examining your own mindsets, beliefs, and orientations, you develop the self-awareness needed to connect with diverse audiences and craft messages that truly resonate.
+
+## Course Structure
+
+The course consists of five components that build on each other throughout the semester:
+
+<table style="border-collapse: collapse; width: 100%; font-size: 0.95em;">
+<thead>
+<tr style="background-color: #a0a0a0; color: black;">
+<th style="border: 1px solid #999; padding: 8px; text-align: center;">#</th>
+<th style="border: 1px solid #999; padding: 8px;">Components</th>
+<th style="border: 1px solid #999; padding: 8px;">What</th>
+<th style="border: 1px solid #999; padding: 8px;">Where</th>
+<th style="border: 1px solid #999; padding: 8px;">When</th>
+<th style="border: 1px solid #999; padding: 8px;">Why</th>
+</tr>
+</thead>
+<tbody>
+<tr style="background-color: #d9d9d9;">
+<td style="border: 1px solid #999; padding: 8px; text-align: center;">1</td>
+<td style="border: 1px solid #999; padding: 8px;">Reading</td>
+<td style="border: 1px solid #999; padding: 8px;">PDF</td>
+<td style="border: 1px solid #999; padding: 8px;">Brightspace</td>
+<td style="border: 1px solid #999; padding: 8px;">Weekly</td>
+<td style="border: 1px solid #999; padding: 8px;">Build foundational knowledge</td>
+</tr>
+<tr style="background-color: #e6b8c2;">
+<td style="border: 1px solid #999; padding: 8px; text-align: center;">2</td>
+<td style="border: 1px solid #999; padding: 8px;">Psychographics</td>
+<td style="border: 1px solid #999; padding: 8px;">Survey and Reflection</td>
+<td style="border: 1px solid #999; padding: 8px;">Brightspace</td>
+<td style="border: 1px solid #999; padding: 8px;">Prior to Monday</td>
+<td style="border: 1px solid #999; padding: 8px;">Build self-awareness through self-assessments and reflections</td>
+</tr>
+<tr style="background-color: #f5e6a3;">
+<td style="border: 1px solid #999; padding: 8px; text-align: center;">3</td>
+<td style="border: 1px solid #999; padding: 8px;">Health Communication Topics</td>
+<td style="border: 1px solid #999; padding: 8px;">Slides</td>
+<td style="border: 1px solid #999; padding: 8px;">Class</td>
+<td style="border: 1px solid #999; padding: 8px;">Monday Lecture</td>
+<td style="border: 1px solid #999; padding: 8px;">Theory and concepts</td>
+</tr>
+<tr style="background-color: #c8e6c9;">
+<td style="border: 1px solid #999; padding: 8px; text-align: center;">4</td>
+<td style="border: 1px solid #999; padding: 8px;">Case Studies</td>
+<td style="border: 1px solid #999; padding: 8px;">Slides + Worksheets</td>
+<td style="border: 1px solid #999; padding: 8px;">Class</td>
+<td style="border: 1px solid #999; padding: 8px;">Wednesday Lecture</td>
+<td style="border: 1px solid #999; padding: 8px;">Apply theory to real examples</td>
+</tr>
+<tr style="background-color: #f5c87a;">
+<td style="border: 1px solid #999; padding: 8px; text-align: center;">5</td>
+<td style="border: 1px solid #999; padding: 8px;">Health Campaign</td>
+<td style="border: 1px solid #999; padding: 8px;">Worksheets</td>
+<td style="border: 1px solid #999; padding: 8px;">Class and after</td>
+<td style="border: 1px solid #999; padding: 8px;">Wed → Sunday</td>
+<td style="border: 1px solid #999; padding: 8px;">Health communication campaign building</td>
+</tr>
+</tbody>
+</table>
+
+Each week follows a consistent rhythm: you begin with the [**reading**]{style="color: #808080;"} to build foundational knowledge, then complete a [**psychographic self-assessment**]{style="color: #c0576e;"} that connects course concepts to your own beliefs and orientations. [**Monday lectures**]{style="color: #c8a62c;"} introduce health communication theory, [**Wednesday case studies**]{style="color: #4a8c50;"} apply those ideas through real-world examples and hands-on activities, and [**campaign worksheets**]{style="color: #d48a29;"} guide you in building a semester-long health communication campaign from concept to completion. This structure ensures that you are not just learning *about* health communication --- you are actively *doing* it.
+
+## Psychographics and Self-Awareness
+
+A central feature of this course is the emphasis on **psychographics** --- the psychological beliefs, values, motivations, and orientations that shape how people receive, interpret, and respond to health messages. Unlike demographics (age, gender, income), psychographics capture *why* people think and behave the way they do. In health communication, understanding your audience's psychographic profile is essential for designing messages that resonate.
+
+At the start of the semester, you completed a comprehensive **Anonymous Beliefs Survey** measuring key psychographic constructs. This guide presents your individual scores alongside the class distribution so you can reflect on who you are as a health communicator. Effective health communicators are aware of their own knowledge, beliefs, skills, identities, and biases (Eurich, 2017). By examining your own psychographic profile, you will develop the meta-cognitive awareness needed to:
+
+- **Understand** how your motivational orientation, moral foundations, cultural values, health beliefs, and social locations influence your receptivity to health messages
+- **Recognize** how your beliefs differ from --- or align with --- those of your peers and the broader public
+- **Apply** self-knowledge to design more effective, audience-centered health communication campaigns
+
+The next chapter explains how this guide is organized and how to find and interpret your scores.

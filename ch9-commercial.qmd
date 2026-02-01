@@ -1,0 +1,466 @@
+# Economic/Commercial Beliefs {#sec-wealth-cdoh}
+
+```{r}
+#| label: setup-ch7
+#| include: false
+
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+library(patchwork)
+library(kableExtra)
+
+# ---- Percentile Helper ----
+add_percentile <- function(x) {
+  pct <- round(percent_rank(x) * 100)
+  label <- case_when(
+    pct < 33.33 ~ "low",
+    pct < 66.67 ~ "mid",
+    TRUE ~ "high"
+  )
+  paste0(pct, "% (", label, ")")
+}
+
+# ---- Color Palette for Chapter 7 ----
+# Wealth Distribution
+colors_perceived  <- "#264653"   # dark teal — Perceived distribution
+colors_desired    <- "#2a9d8f"   # teal — Desired distribution
+colors_actual     <- "#e9c46a"   # gold — Actual distribution
+
+# Zero-Sum Beliefs
+colors_zs_economic <- "#e76f51"  # burnt orange — Economic zero-sum
+colors_zs_social   <- "#f4a261"  # amber — Social identity zero-sum
+
+# CDOH Beliefs
+colors_cdoh_firearms  <- "#d62828"   # red — Firearms industry
+colors_cdoh_food      <- "#fcbf49"   # yellow — Food industry
+colors_cdoh_health    <- "#003049"   # dark blue — Healthcare industry
+
+# ---- Load & Prepare Data ----
+alldata <- read_csv("data/survey_data.csv", show_col_types = FALSE)
+
+alldata <- alldata %>%
+  filter(
+    !is.na(PASSWORD),
+    PASSWORD != "PASSWORD",
+    !grepl("ImportId", PASSWORD, fixed = TRUE),
+    !grepl("ImportId", YEAR, fixed = TRUE),
+    PASSWORD != "What is the current year?",
+    YEAR != "What is the current year?"
+  )
+
+# Remove duplicate olive0925 (keep first occurrence, drop second)
+olive_rows <- which(alldata$PASSWORD == "olive0925")
+if (length(olive_rows) > 1) {
+  alldata <- alldata[-olive_rows[-1], ]
+}
+
+# Clean passwords: replace identifying entries
+alldata <- alldata %>%
+  mutate(
+    PASSWORD = case_when(
+      PASSWORD == "Powerisgay2!" ~ "Power2",
+      PASSWORD == "K1lc0yne$402" ~ "Health$402",
+      PASSWORD == "Charlie1203" ~ "Health1203",
+      PASSWORD == "aaron4103" ~ "health4103",
+      PASSWORD == "brandonc1248" ~ "health1248",
+      PASSWORD == "joyas1244" ~ "health1244",
+      PASSWORD == "olive0925" ~ "health0925",
+      TRUE ~ PASSWORD
+    )
+  )
+
+alldata <- alldata %>%
+  mutate(
+    CLASS = factor(
+      CLASS,
+      levels = c("1", "2", "3"),
+      labels = c("PH322", "ANTH206", "Peer Mentor / TA")
+    )
+  )
+```
+
+This chapter explores your **beliefs about wealth distribution**, **zero-sum thinking**, and **beliefs about commercial determinants of health**. These constructs are critical for health communication because they shape how people understand systemic causes of health inequities, whether they view social progress as a competition, and how they perceive corporate influence on public health.
+
+::: {.callout-important}
+## PH 322 — Week 10: Material Design & Health Policy
+This week examines commercial determinants of health, corporate influence on health information, and how to design health messages that counter misinformation from corporate and political actors. Your scores reveal how you think about wealth, fairness, and institutional power.
+:::
+
+---
+
+## Perceived vs. Desired Wealth Distribution
+
+### Constructs {.unnumbered}
+
+These items (adapted from [Norton & Ariely, 2011](https://doi.org/10.1177/0956797611398494)) measure perceptions and preferences about how wealth is distributed in the United States. Perceived wealth distribution captures what you *think* the current distribution is, while desired wealth distribution captures what you believe would be *fair*. Comparing these to the actual distribution reveals how well-calibrated people's perceptions are and how much redistribution they prefer.
+
+### Measures {.unnumbered}
+
+Each distribution allocates 100% of total wealth across five quintiles (Top 20% through Bottom 20%). Participants estimated both their perceived and desired distributions. The chart below compares three distributions: Perceived (participant estimates), Desired (participant ideals), and Actual (Federal Reserve data).
+
+```{r}
+#| label: wealth-compute
+
+wealth_data <- alldata %>%
+  select(CLASS, PASSWORD,
+         WEALTHDISTRIBUTION_5, WEALTHDISTRIBUTION_4, WEALTHDISTRIBUTION_3,
+         WEALTHDISTRIBUTION_2, WEALTHDISTRIBUTION_1,
+         DESIREDWEALTHDISTRIB_5, DESIREDWEALTHDISTRIB_4, DESIREDWEALTHDISTRIB_3,
+         DESIREDWEALTHDISTRIB_2, DESIREDWEALTHDISTRIB_1) %>%
+  mutate(across(-c(CLASS, PASSWORD), ~ as.numeric(.)))
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: wealth-password-perceived
+
+wealth_perceived <- wealth_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  select(PASSWORD,
+         WEALTHDISTRIBUTION_5, WEALTHDISTRIBUTION_4, WEALTHDISTRIBUTION_3,
+         WEALTHDISTRIBUTION_2, WEALTHDISTRIBUTION_1) %>%
+  arrange(PASSWORD)
+
+kbl(
+  wealth_perceived,
+  digits = 1,
+  escape = FALSE,
+  col.names = c("Password",
+                 paste0("<span style='color:", colors_perceived, "'>Top 20%</span>"),
+                 paste0("<span style='color:", colors_perceived, "'>2nd</span>"),
+                 paste0("<span style='color:", colors_perceived, "'>3rd</span>"),
+                 paste0("<span style='color:", colors_perceived, "'>4th</span>"),
+                 paste0("<span style='color:", colors_perceived, "'>Bottom 20%</span>")),
+  caption = "Perceived Wealth Distribution (% of total wealth)"
+) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE)
+```
+
+```{r}
+#| label: wealth-password-desired
+
+wealth_desired <- wealth_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  select(PASSWORD,
+         DESIREDWEALTHDISTRIB_5, DESIREDWEALTHDISTRIB_4, DESIREDWEALTHDISTRIB_3,
+         DESIREDWEALTHDISTRIB_2, DESIREDWEALTHDISTRIB_1) %>%
+  arrange(PASSWORD)
+
+kbl(
+  wealth_desired,
+  digits = 1,
+  escape = FALSE,
+  col.names = c("Password",
+                 paste0("<span style='color:", colors_desired, "'>Top 20%</span>"),
+                 paste0("<span style='color:", colors_desired, "'>2nd</span>"),
+                 paste0("<span style='color:", colors_desired, "'>3rd</span>"),
+                 paste0("<span style='color:", colors_desired, "'>4th</span>"),
+                 paste0("<span style='color:", colors_desired, "'>Bottom 20%</span>")),
+  caption = "Desired Wealth Distribution (% of total wealth)"
+) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: wealth-stacked-bar
+#| fig-cap: "Wealth Distribution: Average perceived vs. desired distribution compared to actual U.S. wealth distribution."
+#| fig-width: 10
+#| fig-height: 6
+
+# Calculate average perceived and desired
+avg_perceived <- wealth_data %>%
+  summarise(across(starts_with("WEALTHDISTRIBUTION_"), ~ mean(., na.rm = TRUE))) %>%
+  pivot_longer(everything(), names_to = "quintile", values_to = "pct") %>%
+  mutate(
+    quintile_label = c("Top 20%", "2nd 20%", "3rd 20%", "4th 20%", "Bottom 20%"),
+    type = "Perceived"
+  )
+
+avg_desired <- wealth_data %>%
+  summarise(across(starts_with("DESIREDWEALTHDISTRIB_"), ~ mean(., na.rm = TRUE))) %>%
+  pivot_longer(everything(), names_to = "quintile", values_to = "pct") %>%
+  mutate(
+    quintile_label = c("Top 20%", "2nd 20%", "3rd 20%", "4th 20%", "Bottom 20%"),
+    type = "Desired"
+  )
+
+# Actual U.S. wealth distribution (approximate, Federal Reserve 2022)
+actual <- tibble(
+  quintile = paste0("actual_", 1:5),
+  pct = c(86, 9, 3, 1.5, 0.5),
+  quintile_label = c("Top 20%", "2nd 20%", "3rd 20%", "4th 20%", "Bottom 20%"),
+  type = "Actual"
+)
+
+wealth_compare <- bind_rows(avg_perceived, avg_desired, actual) %>%
+  mutate(
+    type = factor(type, levels = c("Perceived", "Desired", "Actual")),
+    quintile_label = factor(quintile_label,
+      levels = c("Top 20%", "2nd 20%", "3rd 20%", "4th 20%", "Bottom 20%"))
+  )
+
+ggplot(wealth_compare, aes(x = type, y = pct, fill = quintile_label)) +
+  geom_col(position = "stack", alpha = 0.85) +
+  scale_fill_manual(values = c(
+    "Top 20%" = "#264653", "2nd 20%" = "#2a9d8f",
+    "3rd 20%" = "#e9c46a", "4th 20%" = "#f4a261", "Bottom 20%" = "#e76f51"
+  )) +
+  labs(
+    title = "Wealth Distribution: Perceived vs. Desired vs. Actual",
+    subtitle = "Average estimates from all participants compared to Federal Reserve data",
+    x = NULL, y = "Percentage of Total Wealth (%)",
+    fill = "Wealth Quintile"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "right")
+```
+
+---
+
+## Zero-Sum Beliefs
+
+### Constructs {.unnumbered}
+
+The **Zero-Sum Beliefs Scale** (OPINIONBELIEFS) measures the extent to which you believe that gains for one group necessarily come at the expense of another group:
+
+- **Economic Zero-Sum**: Belief that economic gains are always at someone else's loss
+- **Social Identity Zero-Sum**: Belief that progress for marginalized groups comes at the expense of dominant groups (e.g., less sexism for women means more sexism for men)
+
+### Measures {.unnumbered}
+
+The scale contains 11 items (3 economic, 8 social identity) rated on a 7-point scale: 1 = *Strongly Disbelieve*, 2 = *Somewhat Disbelieve*, 3 = *Disbelieve*, 4 = *Neither Disbelieve nor Believe*, 5 = *Believe*, 6 = *Somewhat Believe*, 7 = *Strongly Believe*. Higher scores indicate stronger zero-sum thinking.
+
+**Example items:**
+
+- Economic: *"Life is so devised that when somebody gains, others have to lose."*
+- Social Identity: *"As women face less sexism, men end up facing more sexism."*
+
+```{r}
+#| label: zerosun-compute
+
+zs_data <- alldata %>%
+  select(CLASS, PASSWORD, all_of(paste0("OPINIONBELIEFS_", 1:11))) %>%
+  mutate(across(starts_with("OPINIONBELIEFS_"), ~ as.numeric(.)))
+
+zs_data <- zs_data %>%
+  mutate(
+    zs_economic = rowMeans(
+      pick(OPINIONBELIEFS_1, OPINIONBELIEFS_2, OPINIONBELIEFS_3), na.rm = TRUE
+    ),
+    zs_social = rowMeans(
+      pick(all_of(paste0("OPINIONBELIEFS_", 4:11))), na.rm = TRUE
+    )
+  )
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: zerosun-password-table
+
+zs_password <- zs_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  select(PASSWORD, zs_economic, zs_social) %>%
+  mutate(
+    zs_economic_pct = add_percentile(zs_economic),
+    zs_social_pct = add_percentile(zs_social)
+  ) %>%
+  select(PASSWORD, zs_economic, zs_economic_pct, zs_social, zs_social_pct) %>%
+  arrange(PASSWORD)
+
+kbl(
+  zs_password,
+  digits = 2,
+  escape = FALSE,
+  col.names = c("Password",
+                 paste0("<span style='color:", colors_zs_economic, "'>Economic</span>"),
+                 paste0("<span style='color:", colors_zs_economic, "'>Percentile</span>"),
+                 paste0("<span style='color:", colors_zs_social, "'>Social Identity</span>"),
+                 paste0("<span style='color:", colors_zs_social, "'>Percentile</span>")),
+  caption = "Zero-Sum Beliefs: Your Composite Scores"
+) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: zerosun-density
+#| fig-cap: "Zero-Sum Beliefs: Economic vs. Social Identity dimensions. Dashed lines indicate 33rd and 67th percentiles."
+#| fig-width: 10
+#| fig-height: 5
+
+zs_long <- zs_data %>%
+  select(CLASS, zs_economic, zs_social) %>%
+  pivot_longer(cols = starts_with("zs_"), names_to = "dimension", values_to = "score") %>%
+  mutate(dimension = recode(dimension,
+    zs_economic = "Economic Zero-Sum", zs_social = "Social Identity Zero-Sum"))
+
+zs_econ_scores <- zs_long %>% filter(dimension == "Economic Zero-Sum") %>% pull(score)
+zs_econ_q33 <- quantile(zs_econ_scores, probs = 1/3, na.rm = TRUE)
+zs_econ_q67 <- quantile(zs_econ_scores, probs = 2/3, na.rm = TRUE)
+
+zs_soc_scores <- zs_long %>% filter(dimension == "Social Identity Zero-Sum") %>% pull(score)
+zs_soc_q33 <- quantile(zs_soc_scores, probs = 1/3, na.rm = TRUE)
+zs_soc_q67 <- quantile(zs_soc_scores, probs = 2/3, na.rm = TRUE)
+
+p_zs_econ <- ggdensity(
+  zs_long %>% filter(dimension == "Economic Zero-Sum"),
+  x = "score", fill = colors_zs_economic, color = colors_zs_economic, alpha = 0.4
+) +
+  geom_vline(xintercept = zs_econ_q33, linetype = "dashed", color = colors_zs_economic, linewidth = 0.6) +
+  geom_vline(xintercept = zs_econ_q67, linetype = "dashed", color = colors_zs_economic, linewidth = 0.6) +
+  coord_cartesian(xlim = c(1, 7)) + scale_x_continuous(breaks = 1:7, labels = c("Strongly\nDisbelieve (1)", "(2)", "(3)", "Neither\n(4)", "(5)", "(6)", "Strongly\nBelieve (7)")) +
+  labs(title = "Economic Zero-Sum", x = "Score", y = "Density") +
+  theme_minimal() + theme(legend.position = "none")
+
+p_zs_soc <- ggdensity(
+  zs_long %>% filter(dimension == "Social Identity Zero-Sum"),
+  x = "score", fill = colors_zs_social, color = colors_zs_social, alpha = 0.4
+) +
+  geom_vline(xintercept = zs_soc_q33, linetype = "dashed", color = colors_zs_social, linewidth = 0.6) +
+  geom_vline(xintercept = zs_soc_q67, linetype = "dashed", color = colors_zs_social, linewidth = 0.6) +
+  coord_cartesian(xlim = c(1, 7)) + scale_x_continuous(breaks = 1:7, labels = c("Strongly\nDisbelieve (1)", "(2)", "(3)", "Neither\n(4)", "(5)", "(6)", "Strongly\nBelieve (7)")) +
+  labs(title = "Social Identity Zero-Sum", x = "Score", y = "Density") +
+  theme_minimal() + theme(legend.position = "none")
+
+p_zs_econ + p_zs_soc +
+  plot_annotation(
+    title = "All Participants: Zero-Sum Beliefs",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## Commercial Determinants of Health (CDOH) Beliefs
+
+### Constructs {.unnumbered}
+
+The **CDOH Beliefs Scale** measures beliefs about how three industries negatively influence public health through political lobbying, research distortion, marketing practices, distribution inequities, labor practices, pricing, and community power:
+
+- **Firearms Industry**: Beliefs about gun industry influence on legislation, research, marketing, distribution, labor, pricing, and community health
+- **Food Industry**: Beliefs about food industry influence on nutrition policy, research, marketing, food access, labor, pricing, and local food systems
+- **Healthcare Industry**: Beliefs about healthcare/pharmaceutical industry influence on mental health policy, research, marketing, distribution, labor, pricing, and access
+
+### Measures {.unnumbered}
+
+The scale contains 21 items (7 per industry) rated on a 6-point scale: 1 = *Strongly Disagree*, 2 = *Disagree*, 3 = *Slightly Disagree*, 4 = *Slightly Agree*, 5 = *Agree*, 6 = *Strongly Agree*. Higher scores indicate stronger belief in corporate influence on health.
+
+**Example items:**
+
+- Firearms: *"The firearm industry's lobbying prevents passage of evidence-based gun safety legislation"*
+- Food: *"Food industry political influence blocks regulations that could improve food security"*
+- Healthcare: *"Healthcare companies' political power restricts access to mental health services"*
+
+```{r}
+#| label: cdoh-compute
+
+cdoh_data <- alldata %>%
+  select(CLASS, PASSWORD, all_of(paste0("CDOHBELIEFS_", 1:21))) %>%
+  mutate(across(starts_with("CDOHBELIEFS_"), ~ as.numeric(.)))
+
+cdoh_data <- cdoh_data %>%
+  mutate(
+    cdoh_firearms = rowMeans(
+      pick(CDOHBELIEFS_1, CDOHBELIEFS_4, CDOHBELIEFS_7,
+             CDOHBELIEFS_10, CDOHBELIEFS_13, CDOHBELIEFS_16, CDOHBELIEFS_19),
+      na.rm = TRUE
+    ),
+    cdoh_food = rowMeans(
+      pick(CDOHBELIEFS_2, CDOHBELIEFS_5, CDOHBELIEFS_8,
+             CDOHBELIEFS_11, CDOHBELIEFS_14, CDOHBELIEFS_17, CDOHBELIEFS_20),
+      na.rm = TRUE
+    ),
+    cdoh_healthcare = rowMeans(
+      pick(CDOHBELIEFS_3, CDOHBELIEFS_6, CDOHBELIEFS_9,
+             CDOHBELIEFS_12, CDOHBELIEFS_15, CDOHBELIEFS_18, CDOHBELIEFS_21),
+      na.rm = TRUE
+    )
+  )
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: cdoh-password-table
+
+cdoh_password <- cdoh_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  select(PASSWORD, cdoh_firearms, cdoh_food, cdoh_healthcare) %>%
+  mutate(
+    cdoh_firearms_pct = add_percentile(cdoh_firearms),
+    cdoh_food_pct = add_percentile(cdoh_food),
+    cdoh_healthcare_pct = add_percentile(cdoh_healthcare)
+  ) %>%
+  select(PASSWORD, cdoh_firearms, cdoh_firearms_pct, cdoh_food, cdoh_food_pct, cdoh_healthcare, cdoh_healthcare_pct) %>%
+  arrange(PASSWORD)
+
+kbl(
+  cdoh_password,
+  digits = 2,
+  escape = FALSE,
+  col.names = c("Password",
+                 paste0("<span style='color:", colors_cdoh_firearms, "'>Firearms</span>"),
+                 paste0("<span style='color:", colors_cdoh_firearms, "'>Fire(%)</span>"),
+                 paste0("<span style='color:", colors_cdoh_food, "'>Food</span>"),
+                 paste0("<span style='color:", colors_cdoh_food, "'>Food(%)</span>"),
+                 paste0("<span style='color:", colors_cdoh_health, "'>Healthcare</span>"),
+                 paste0("<span style='color:", colors_cdoh_health, "'>HC(%)</span>")),
+  caption = "CDOH Beliefs: Firearms, Food & Healthcare Industry Composite Scores"
+) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = TRUE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: cdoh-density
+#| fig-cap: "CDOH Beliefs: Beliefs about corporate influence on health across three industries. Dashed lines indicate 33rd and 67th percentiles."
+#| fig-width: 14
+#| fig-height: 5
+
+cdoh_long <- cdoh_data %>%
+  select(CLASS, cdoh_firearms, cdoh_food, cdoh_healthcare) %>%
+  pivot_longer(cols = starts_with("cdoh_"), names_to = "industry", values_to = "score") %>%
+  mutate(
+    industry = recode(industry,
+      cdoh_firearms = "Firearms Industry",
+      cdoh_food = "Food Industry",
+      cdoh_healthcare = "Healthcare Industry"),
+    industry = factor(industry, levels = c("Firearms Industry", "Food Industry", "Healthcare Industry"))
+  )
+
+make_cdoh_plot <- function(name, color) {
+  d <- cdoh_long %>% filter(industry == name)
+  q33 <- quantile(d$score, probs = 1/3, na.rm = TRUE)
+  q67 <- quantile(d$score, probs = 2/3, na.rm = TRUE)
+  ggdensity(d, x = "score", fill = color, color = color, alpha = 0.4) +
+    geom_vline(xintercept = q33, linetype = "dashed", color = color, linewidth = 0.6) +
+    geom_vline(xintercept = q67, linetype = "dashed", color = color, linewidth = 0.6) +
+    coord_cartesian(xlim = c(1, 6)) +
+    scale_x_continuous(breaks = 1:6, labels = c("Strongly\nDisagree (1)", "Disagree\n(2)", "Slightly\nDisagree (3)", "Slightly\nAgree (4)", "Agree\n(5)", "Strongly\nAgree (6)")) +
+    labs(title = name, x = "Composite Score", y = "Density") +
+    theme_minimal() + theme(legend.position = "none", plot.title = element_text(size = 10), axis.text.x = element_text(size = 6))
+}
+
+p_fire <- make_cdoh_plot("Firearms Industry", colors_cdoh_firearms)
+p_food <- make_cdoh_plot("Food Industry", colors_cdoh_food)
+p_hc <- make_cdoh_plot("Healthcare Industry", colors_cdoh_health)
+
+p_fire + p_food + p_hc +
+  plot_annotation(
+    title = "All Participants: CDOH Beliefs -- Firearms, Food & Healthcare Industries",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## References {.unnumbered}
+
+Norton, M. I., & Ariely, D. (2011). Building a better America --- one wealth quintile at a time. *Perspectives on Psychological Science*, *6*(1), 9--12. <https://doi.org/10.1177/0956797611398494>

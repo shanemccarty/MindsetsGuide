@@ -1,0 +1,183 @@
+# Health Literacy {#sec-health-literacy}
+
+```{r}
+#| label: setup-ch2
+#| include: false
+
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+library(patchwork)
+library(kableExtra)
+
+# ---- Percentile Helper ----
+add_percentile <- function(x) {
+  pct <- round(percent_rank(x) * 100)
+  label <- case_when(
+    pct < 33.33 ~ "low",
+    pct < 66.67 ~ "mid",
+    TRUE ~ "high"
+  )
+  paste0(pct, "% (", label, ")")
+}
+
+# ---- Color Palette for Chapter 4 ----
+colors_literacy <- "#2a9d8f"   # teal
+
+# ---- Load & Prepare Data ----
+alldata <- read_csv("data/survey_data.csv", show_col_types = FALSE)
+
+alldata <- alldata %>%
+  filter(
+    !is.na(PASSWORD),
+    PASSWORD != "PASSWORD",
+    !grepl("ImportId", PASSWORD, fixed = TRUE),
+    !grepl("ImportId", YEAR, fixed = TRUE),
+    PASSWORD != "What is the current year?",
+    YEAR != "What is the current year?"
+  )
+
+# Remove duplicate olive0925 (keep first occurrence, drop second)
+olive_rows <- which(alldata$PASSWORD == "olive0925")
+if (length(olive_rows) > 1) {
+  alldata <- alldata[-olive_rows[-1], ]
+}
+
+# Clean passwords: replace identifying entries
+alldata <- alldata %>%
+  mutate(
+    PASSWORD = case_when(
+      PASSWORD == "Powerisgay2!" ~ "Power2",
+      PASSWORD == "K1lc0yne$402" ~ "Health$402",
+      PASSWORD == "Charlie1203" ~ "Health1203",
+      PASSWORD == "aaron4103" ~ "health4103",
+      PASSWORD == "brandonc1248" ~ "health1248",
+      PASSWORD == "joyas1244" ~ "health1244",
+      PASSWORD == "olive0925" ~ "health0925",
+      TRUE ~ PASSWORD
+    )
+  )
+
+alldata <- alldata %>%
+  mutate(
+    CLASS = factor(
+      CLASS,
+      levels = c("1", "2", "3"),
+      labels = c("PH322", "ANTH206", "Peer Mentor / TA")
+    )
+  )
+```
+
+This chapter focuses on **health literacy** --- your ability to find, understand, evaluate, and use health information. Health literacy is a critical determinant of health communication effectiveness because it shapes how audiences engage with health messages, navigate health systems, and make informed decisions.
+
+::: {.callout-important}
+## PH 322 — Week 4: Audience Profile Based on Health Literacy & Misinformation
+This week explores how health literacy levels influence the accessibility and impact of health messages. Your health literacy score helps you understand your own capacity and recognize how to design messages for audiences with varying literacy levels.
+:::
+
+---
+
+## Health Literacy Scale
+
+### Constructs {.unnumbered}
+
+The **Health Literacy Scale** (adapted from the [European Health Literacy Survey (HLS-EU)](https://health-literacy.eu/)) measures your self-assessed ability to navigate health information. Health literacy encompasses the knowledge, motivation, and competencies needed to access, understand, appraise, and apply health information in everyday life.
+
+### Measures {.unnumbered}
+
+The scale contains 8 items rated on a 5-point scale: 1 = *Very Bad*, 2 = *Bad*, 3 = *Moderate*, 4 = *Good*, 5 = *Very Good*. Higher scores indicate higher self-reported health literacy. Participants who selected "I do not make use of this kind of information" are coded as missing.
+
+**Example items:**
+
+- *"How well do you understand instruction leaflets for medication?"*
+- *"When I have questions on diseases or complaints, I know where I can find information on these issues."*
+
+```{r}
+#| label: literacy-compute
+
+literacy_data <- alldata %>%
+  select(CLASS, PASSWORD, all_of(paste0("LITERACY_", 1:8))) %>%
+  mutate(across(starts_with("LITERACY_"), ~ as.numeric(.)))
+
+# Remove participants who selected "I do not make use of this kind of information" (coded as -50)
+literacy_data <- literacy_data %>%
+  mutate(across(
+    starts_with("LITERACY_"),
+    ~ ifelse(. < 0, NA, .)
+  ))
+
+literacy_data <- literacy_data %>%
+  mutate(
+    health_literacy = rowMeans(
+      pick(all_of(paste0("LITERACY_", 1:8))), na.rm = TRUE
+    )
+  )
+```
+
+### Your Scores {.unnumbered}
+
+Find your password below to see your Health Literacy composite score.
+
+```{r}
+#| label: literacy-password-table
+
+literacy_password <- literacy_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  mutate(health_literacy_pct = add_percentile(health_literacy)) %>%
+  select(PASSWORD, health_literacy, health_literacy_pct) %>%
+  arrange(PASSWORD)
+
+literacy_password %>%
+  kbl(
+    digits = 2,
+    escape = FALSE,
+    col.names = c("Password",
+                   paste0("<span style='color:", colors_literacy, "'>Health Literacy</span>"),
+                   paste0("<span style='color:", colors_literacy, "'>Score (%)</span>")),
+    caption = "Health Literacy Scale: Your Composite Score"
+  ) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: literacy-density
+#| fig-cap: "Health Literacy Scale: Distribution of self-reported health literacy across all participants. Dashed lines indicate the 33rd and 67th percentiles."
+#| fig-width: 8
+#| fig-height: 5
+
+q33_literacy <- quantile(literacy_data$health_literacy, probs = 1/3, na.rm = TRUE)
+q67_literacy <- quantile(literacy_data$health_literacy, probs = 2/3, na.rm = TRUE)
+
+ggdensity(
+  literacy_data %>% filter(!is.na(health_literacy)),
+  x = "health_literacy",
+  fill = colors_literacy,
+  color = colors_literacy,
+  alpha = 0.4
+) +
+  geom_vline(xintercept = q33_literacy, linetype = "dashed", color = colors_literacy, linewidth = 0.6) +
+  geom_vline(xintercept = q67_literacy, linetype = "dashed", color = colors_literacy, linewidth = 0.6) +
+  coord_cartesian(xlim = c(1, 5)) +
+  scale_x_continuous(breaks = 1:5, labels = c("Very\nBad (1)", "Bad\n(2)", "Moderate\n(3)", "Good\n(4)", "Very\nGood (5)")) +
+  labs(
+    title = "All Participants: Health Literacy Scale",
+    subtitle = "Dashed lines = 33rd and 67th percentiles",
+    x = "Composite Score",
+    y = "Density"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+::: {.callout-note}
+## Misinformation Susceptibility
+Want to test your ability to detect misinformation? Take the [Misinformation Susceptibility Test (MIST)](https://www.misinfosusceptibility.com/) online to see how well you can distinguish real from fake news headlines.
+:::
+
+---
+
+## References {.unnumbered}
+
+Ho, E. H., Hagmann, D., & Loewenstein, G. (2021). Measuring information preferences. *Management Science*, *67*(1), 126--145. <https://doi.org/10.1287/mnsc.2019.3554>

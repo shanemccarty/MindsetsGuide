@@ -1,0 +1,71 @@
+# A Guide for You {#sec-guide}
+
+This guide is your companion throughout the semester. Each week, it presents your individual scores alongside the class distribution so you can reflect on who you are as a health communicator.
+
+## How This Guide Is Organized
+
+Each chapter corresponds to a weekly component of the course:
+
+| Chapter | Week | Topic | Key Constructs |
+|---------|------|-------|----------------|
+| 1 | --- | A Guide for You | How to use this guide |
+| 2 | Week 2 | Thinking Preferences | Analytical, Structural, Social, Conceptual |
+| 3 | Week 3 | Regulatory Focus | Regulatory Focus, Health Regulatory Focus, Prosocial Regulatory Focus |
+| 4 | Week 4 | Health Literacy | Health Literacy Scale |
+| 5 | Week 5 | Psychological Beliefs | Free Will & Determinism, Self-Efficacy, Health Information Avoidance |
+| 6 | Week 6 | Health Attributions & Morality | Moral Foundations, Causes of Mental Illness, Essentialist Beliefs |
+| 7 | Week 7 | Sociocultural Beliefs | Competition Beliefs, Individualism vs. Collectivism, Social Identity |
+| 8 | Week 9 | Health Behaviors | Social Media Use, Positive Health Behavior Profile |
+| 9 | Week 10 | Economic/Commercial Beliefs | Wealth Distribution, Zero-Sum Beliefs, Commercial Determinants |
+
+## How to Use Your Mindsets
+
+Throughout this guide, you will encounter color-coded callout boxes that connect your psychographic scores to different components of the course:
+
+::: {.callout-important}
+## Psychographics
+Red callout boxes highlight connections to your **psychographic self-assessments**. We complete these assessments to learn more about ourselves and build self-awareness --- the foundation for effective health communication.
+:::
+
+::: {.callout-tip}
+## Case Studies
+Green callout boxes highlight connections to **case study analysis**. Each week, we consider how these mindsets influence our responses during case study discussions and real-world examples.
+:::
+
+::: {.callout-warning}
+## Health Campaign
+Orange callout boxes highlight connections to your **health communication campaign**. We consider how these mindsets influence our ability to create effective health messages and the ways other people will receive those messages.
+:::
+
+## How to Find Your Scores
+
+At the end of the anonymous survey, you created a **password** (5 letters + 4 numbers). Each chapter contains a table where you can look up your password to find your composite scores on that week's measures.
+
+::: {.callout-note}
+## Save Your Password
+Your password is the key to accessing your individual scores throughout the semester. Keep it saved in your phone notes or on a sticky note. If you want to replace your current password with a new password, contact Dr. Shane McCarty.
+:::
+
+## How to Interpret Your Scores
+
+Each measure in this guide produces a **composite score** --- a single number that summarizes your responses on a set of related survey questions. To calculate it, we take all of your answers within a subscale and average them together. For example, if a subscale has 5 questions and you answered 3, 4, 5, 4, and 4, your composite score would be 4.0. This gives you one easy-to-read number instead of having to interpret each question individually.
+
+Here is how to interpret your results:
+
+1. **Find your score** in the password lookup table
+2. **Locate your score** on the class density plot --- the dashed vertical lines show the 33rd and 67th percentiles
+3. **Compare** where you fall relative to the distribution: Are you low, mid, or high on this measure?
+4. **Reflect** on what your score means for how you receive and design health messages
+
+::: {.callout-note}
+## There Are No Right or Wrong Scores
+These measures capture a range of psychological beliefs and orientations. The purpose is self-awareness, not evaluation. Different mindsets bring different strengths to health communication.
+:::
+
+## About the Data
+
+The data in this guide comes from the Anonymous Beliefs Survey completed by students in PH322 (Communicating Health Information) and ANTH206 (Community Health Research Methods) in Spring 2026. By combining data from both classes, we create a larger reference sample for you to compare your scores against.
+
+- **All participants**: Visualizations show the full sample from both classes
+- **PH322 students**: Your password lookup tables show scores for PH322 students specifically
+- **Composite scores**: Calculated as the average of your responses to the items within each subscale (after adjusting any reverse-coded items so that all questions point in the same direction)

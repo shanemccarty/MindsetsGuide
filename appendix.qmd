@@ -1,0 +1,216 @@
+# Scoring Guide & References {#sec-appendix}
+
+This appendix provides the complete scoring guide for all measures in this ebook, including subscale item keys, response scales, and academic references.
+
+---
+
+## Scoring Guide
+
+### Chapter 3: Regulatory Focus
+
+**Regulatory Focus Questionnaire (RFQ; Higgins et al., 2001)**
+
+| Subscale | Items | Reverse-Scored | Scale |
+|----------|-------|----------------|-------|
+| Promotion Focus | 1(R), 2, 3, 4(R), 5, 6(R) | 1, 4, 6 | 1--5 (Never to Very Often) |
+| Prevention Focus | 7(R), 8(R), 9, 10(R), 11 | 7, 8, 10 | 1--5 (Never to Very Often) |
+
+**Health Regulatory Focus Scale (HRFS; Ferrer et al., 2017)**
+
+| Subscale | Items | Reverse-Scored | Scale |
+|----------|-------|----------------|-------|
+| Health Promotion Focus | 1--6 | None | 1--6 (Strongly Disagree to Strongly Agree) |
+| Health Prevention Focus | 7--12 | None | 1--6 (Strongly Disagree to Strongly Agree) |
+
+**Prosocial Regulatory Focus Scale (McCarty et al., 2026)**
+
+| Subscale | Items | Reverse-Scored | Scale |
+|----------|-------|----------------|-------|
+| Promoting Care | 1--5 | None | 1--6 (Strongly Disagree to Strongly Agree) |
+| Preventing Harm | 6--10 | None | 1--6 (Strongly Disagree to Strongly Agree) |
+
+### Chapter 4: Health Literacy
+
+**Health Literacy Scale (8 items)**
+
+| Subscale | Items | Reverse-Scored | Scale |
+|----------|-------|----------------|-------|
+| Health Literacy (composite) | 1--8 | None | 1--5 (Very Bad to Very Good) |
+
+*Note:* Responses of "I do not make use of this kind of information" are treated as missing.
+
+### Chapter 5: Psychological Beliefs
+
+**FAD-Plus (Paulhus & Carey, 2011)**
+
+| Subscale | Items | Scale |
+|----------|-------|-------|
+| Free Will | 4, 8, 12, 16, 21, 23, 26 | 1--5 (Strongly Disagree to Strongly Agree) |
+| Scientific Determinism | 2, 6, 10, 14, 18, 22, 24 | 1--5 |
+| Fatalistic Determinism | 1, 5, 9, 13, 17 | 1--5 |
+| Unpredictability | 3, 7, 11, 15, 19, 20, 25, 27 | 1--5 |
+
+**Nutrition Self-Efficacy Scale (Schwarzer & Renner, 2000)**
+
+| Subscale | Items | Scale |
+|----------|-------|-------|
+| Nutrition Self-Efficacy | 1--5 | 1--4 (Very Uncertain to Very Certain) |
+
+**Physical Exercise Self-Efficacy Scale (Schwarzer & Renner, 2000)**
+
+| Subscale | Items | Scale |
+|----------|-------|-------|
+| Exercise Self-Efficacy | 1--5 | 1--4 (Very Uncertain to Very Certain) |
+
+**Health Information Avoidance --- General (7 scenarios)**
+
+| Subscale | Items | Scale |
+|----------|-------|-------|
+| General Avoidance (composite) | 1--7 | 1--4 (Definitely Don't Want to Know to Definitely Want to Know) |
+
+*Note:* Higher scores indicate *more* information seeking (less avoidance).
+
+**Health Information Avoidance --- Depression (8 items)**
+
+| Subscale | Items | Reverse-Scored | Scale |
+|----------|-------|----------------|-------|
+| Depression Avoidance | 1, 2, 3(R), 4, 5(R), 6, 7(R), 8(R) | 3, 5, 7, 8 | 1--7 (Strongly Disagree to Strongly Agree) |
+
+*Note:* After reverse-scoring, higher scores indicate *more* avoidance.
+
+### Chapter 6: Health Attributions & Morality
+
+**Moral Foundations Questionnaire (Graham et al., 2011)**
+
+| Foundation | Block 1 Items (Relevance) | Block 2 Items (Agreement) | Scales |
+|------------|--------------------------|--------------------------|--------|
+| Harm/Care | 1, 7 | 1, 7 | B1: 1--5; B2: 1--6 |
+| Fairness/Reciprocity | 2, 8 | 2, 8 | B1: 1--5; B2: 1--6 |
+| Ingroup/Loyalty | 3, 9 | 12, 9 | B1: 1--5; B2: 1--6 |
+| Authority/Respect | 4, 10 | 4, 10 | B1: 1--5; B2: 1--6 |
+| Purity/Sanctity | 5, 11 | 5, 11 | B1: 1--5; B2: 1--6 |
+
+*Note:* Block 1 items 6 ("good at math") and Block 2 item 6 ("better to do good than bad") are catch items excluded from scoring. Block 1 scores are rescaled to a 1--6 range before averaging with Block 2.
+
+**Beliefs about the Causes of Mental Illness (Knettel, 2019)**
+
+| Attribution | Items | Scale |
+|-------------|-------|-------|
+| Social | 1--5 (injustice, support, poverty, stress, trauma) | 1--7 |
+| Biological | 6--8 (genes, medical, chemical imbalance) | 1--7 |
+| Personal | 9--11 (will, choice, attitude) | 1--7 |
+| Lifestyle | 12--14 (diet, germs, activity) | 1--7 |
+
+**Essentialist Beliefs about Addiction (GENBELIEFS3)**
+
+| Subscale | Items | Scale |
+|----------|-------|-------|
+| Categorical Thinking | 1--11 | 1--5 (Strongly Disagree to Strongly Agree) |
+| Biological Essentialism | 12--15 | 1--5 |
+
+### Chapter 7: Sociocultural Beliefs
+
+**Individualism vs. Collectivism (Triandis & Gelfand, 1998)**
+
+| Orientation | Items | Scale |
+|-------------|-------|-------|
+| Horizontal Individualism | 1, 4, 5, 6 | 1--9 |
+| Vertical Individualism | 7, 8, 9, 10 | 1--9 |
+| Horizontal Collectivism | 11, 12, 13, 14 | 1--9 |
+| Vertical Collectivism | 15, 16, 17, 18 | 1--9 |
+
+**Lay Beliefs about Competition (Murayama & Elliot, 2012)**
+
+| Subscale | Items | Scale |
+|----------|-------|-------|
+| Performance | 1--3 | 1--6 |
+| Character | 4--6 | 1--6 |
+| Innovation | 7--9 | 1--6 |
+| Unethical Behavior | 10--12 | 1--6 |
+| Self-Harm | 13--15 | 1--6 |
+| Social Harm | 16--18 | 1--6 |
+
+**Social Identity Perceptions (16 items)**
+
+Scale: 1 (*Hurts a Lot*) to 5 (*Helps a Lot*), with 3 = *Neither Helps nor Hurts*.
+
+### Chapter 8: Health Behaviors
+
+**Social Media Addiction Scale (5 items)**
+
+Scale: 1 (*Totally Disagree*) to 7 (*Totally Agree*). Higher scores = more problematic use.
+
+**Health Behavior Profile** (single items)
+
+| Item | Scale |
+|------|-------|
+| Life Satisfaction | 1--6 (Strongly Disagree to Strongly Agree) |
+| Sleep (hrs/night) | 0--10+ |
+| Sleep Quality | 0--4 (Never to Very Refreshed) |
+| Exercise (days/week) | 0--7 |
+| Stress | 0--10 |
+| Social Media (hrs/day) | 0--10+ |
+| Food Security | 1--4 |
+| Health Status | 1--5 (Poor to Excellent) |
+| Mental Health Status | 1--5 (Poor to Excellent) |
+
+### Chapter 9: Economic/Commercial Beliefs
+
+**Wealth Distribution** (Norton & Ariely-style): Participants allocate 100% across 5 quintiles.
+
+**Zero-Sum Beliefs (11 items)**
+
+| Subscale | Items | Scale |
+|----------|-------|-------|
+| Economic Zero-Sum | 1--3 | 1--7 (Strongly Disbelieve to Strongly Believe) |
+| Social Identity Zero-Sum | 4--11 | 1--7 |
+
+**CDOH Beliefs (21 items)**
+
+| Industry | Items | Scale |
+|----------|-------|-------|
+| Firearms | 1, 4, 7, 10, 13, 16, 19 | 1--6 (Strongly Disagree to Strongly Agree) |
+| Food | 2, 5, 8, 11, 14, 17, 20 | 1--6 |
+| Healthcare | 3, 6, 9, 12, 15, 18, 21 | 1--6 |
+
+---
+
+## References
+
+Andreassen, C. S., Torsheim, T., Brunborg, G. S., & Pallesen, S. (2012). Development of a Facebook addiction scale. *Psychological Reports*, *110*(2), 501--517. <https://doi.org/10.2466/02.09.18.PR0.110.2.501-517>
+
+Eurich, T. (2017). *Insight: The surprising truth about how others see us, how we see ourselves, and why the answers matter more than we think*. Crown Business.
+
+Ferrer, R. A., Lipkus, I. M., Cerully, J. L., McBride, C. M., Shepperd, J. A., & Klein, W. M. (2017). Developing a scale to assess health regulatory focus. *Social Science & Medicine*, *195*, 50--60. <https://doi.org/10.1016/j.socscimed.2017.10.029>
+
+Graham, J., Nosek, B. A., Haidt, J., Iyer, R., Koleva, S., & Ditto, P. H. (2011). Mapping the moral domain. *Journal of Personality and Social Psychology*, *101*(2), 366--385. <https://doi.org/10.1037/a0021847>
+
+Higgins, E. T., Friedman, R. S., Harlow, R. E., Idson, L. C., Ayduk, O. N., & Taylor, A. (2001). Achievement orientations from subjective histories of success: Promotion pride versus prevention pride. *European Journal of Social Psychology*, *31*(1), 3--23. <https://doi.org/10.1002/ejsp.29>
+
+Ho, E. H., Hagmann, D., & Loewenstein, G. (2021). Measuring information preferences. *Management Science*, *67*(1), 126--145. <https://doi.org/10.1287/mnsc.2019.3554>
+
+Knettel, B. A. (2019). Exploring diverse conceptions of mental health and mental illness. In *Developing, Delivering, and Sustaining School Counseling Practices through a Culturally Affirming Lens*. Information Age Publishing.
+
+McCarty, S., et al. (2026). Prosocial regulatory focus theory: Prosocial motivational orientation of promotion and prevention. *Manuscript in preparation*.
+
+Murayama, K., & Elliot, A. J. (2012). The competition--performance relation: A meta-analytic review and test of the opposing processes model of competition and performance. *Psychological Bulletin*, *138*(6), 1035--1070. <https://doi.org/10.1037/a0028324>
+
+Norton, M. I., & Ariely, D. (2011). Building a better America --- one wealth quintile at a time. *Perspectives on Psychological Science*, *6*(1), 9--12. <https://doi.org/10.1177/1745691610393524>
+
+Paulhus, D. L., & Carey, J. M. (2011). The FAD--Plus: Measuring lay beliefs regarding free will and related constructs. *Journal of Personality Assessment*, *93*(1), 96--104. <https://doi.org/10.1080/00223891.2011.536216>
+
+Schwarzer, R., & Renner, B. (2000). Social-cognitive predictors of health behavior: Action self-efficacy and coping self-efficacy. *Health Psychology*, *19*(5), 487--495. <https://doi.org/10.1037/0278-6133.19.5.487>
+
+Triandis, H. C., & Gelfand, M. J. (1998). Converging measurement of horizontal and vertical individualism and collectivism. *Journal of Personality and Social Psychology*, *74*(1), 118--128. <https://doi.org/10.1037/0022-3514.74.1.118>
+
+---
+
+## AI Acknowledgment
+
+[Claude AI](https://claude.ai/) (Anthropic) was used in the development of this guide. Specifically, Claude assisted with generating R code for data analysis and visualization, Quarto markdown formatting and layout, and drafting written text for chapter descriptions, scale interpretations, and structural content. All content was reviewed, edited, and approved by the authors.
+
+---
+
+## In Development
+
+This guide is version 1.0, which may contain a range of errors. Future renditions will correct errors of commission and omission.

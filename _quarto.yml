@@ -1,0 +1,74 @@
+project:
+  type: book
+  output-dir: docs
+
+book:
+  title: "Know Your Mindsets"
+  subtitle: "An Interactive Guide"
+  author:
+    - "Shane McCarty, PhD"
+    - "Zihan Hei"
+  date: "February 1, 2026"
+  version: "Version 1.0 (draft)"
+  search: true
+  repo-url: https://github.com/shanemccarty/MindsetsGuide
+  repo-actions: [edit, issue]
+  sharing: [twitter, linkedin]
+
+  chapters:
+    - index.qmd
+    - part: "Your Mindsets"
+      chapters:
+        - text: "A Guide for You"
+          file: ch1-guide.qmd
+        - text: "Thinking Preferences"
+          file: ch2-thinking.qmd
+        - text: "Regulatory Focus"
+          file: ch3-focus.qmd
+        - text: "Health Literacy"
+          file: ch4-healthliteracy.qmd
+        - text: "Psychological Beliefs"
+          file: ch5-beliefs.qmd
+        - text: "Health Attributions & Morality"
+          file: ch6-moral.qmd
+        - text: "Sociocultural Beliefs"
+          file: ch7-sociocultural.qmd
+        - text: "Health Behaviors"
+          file: ch8-behaviors.qmd
+        - text: "Economic/Commercial Beliefs"
+          file: ch9-commercial.qmd
+    - part: "Appendix"
+      chapters:
+        - text: "Scoring Guide & References"
+          file: appendix.qmd
+
+format:
+  html:
+    theme: cosmo
+    respect-user-color-scheme: true
+    highlight-style:
+      light: github
+      dark: github-dark
+    code-fold: true
+    code-overflow: wrap
+    code-line-numbers: false
+    code-copy: true
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    number-depth: 3
+    page-footer:
+      left: "PH 322 Communicating Health Information in the Digital Age | Binghamton University"
+      right:
+        - icon: github
+          href: https://github.com/shanemccarty/MindsetsGuide
+    search: true
+
+execute:
+  echo: false
+  warning: false
+  message: false
+  cache: false
+  freeze: auto
+
+lang: en

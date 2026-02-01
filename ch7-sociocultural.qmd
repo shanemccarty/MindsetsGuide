@@ -1,0 +1,709 @@
+# Sociocultural Beliefs {#sec-culture-identity}
+
+```{r}
+#| label: setup-ch5
+#| include: false
+
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+library(patchwork)
+library(kableExtra)
+
+# ---- Percentile Helper ----
+add_percentile <- function(x) {
+  pct <- round(percent_rank(x) * 100)
+  label <- case_when(
+    pct < 33.33 ~ "low",
+    pct < 66.67 ~ "mid",
+    TRUE ~ "high"
+  )
+  paste0(pct, "% (", label, ")")
+}
+
+# ---- Color Palette for Chapter 5 ----
+# Individualism vs. Collectivism — 4 colors
+colors_hi <- "#ee6c4d"   # warm orange — Horizontal Individualism
+colors_vi <- "#293241"   # dark navy — Vertical Individualism
+colors_hc <- "#3d5a80"   # medium blue — Horizontal Collectivism
+colors_vc <- "#98c1d9"   # light blue — Vertical Collectivism
+
+# Competition Beliefs — 2 colors
+colors_comp_pos <- "#06d6a0"   # bright green — Positive competition beliefs
+colors_comp_neg <- "#ef476f"   # hot pink — Negative competition beliefs
+
+# Social Identity — 2 colors
+colors_helps <- "#4361ee"   # bright blue — Helps
+colors_hurts <- "#f72585"   # magenta — Hurts
+
+# ---- Load & Prepare Data ----
+alldata <- read_csv("data/survey_data.csv", show_col_types = FALSE)
+
+alldata <- alldata %>%
+  filter(
+    !is.na(PASSWORD),
+    PASSWORD != "PASSWORD",
+    !grepl("ImportId", PASSWORD, fixed = TRUE),
+    !grepl("ImportId", YEAR, fixed = TRUE),
+    PASSWORD != "What is the current year?",
+    YEAR != "What is the current year?"
+  )
+
+# Remove duplicate olive0925 (keep first occurrence, drop second)
+olive_rows <- which(alldata$PASSWORD == "olive0925")
+if (length(olive_rows) > 1) {
+  alldata <- alldata[-olive_rows[-1], ]
+}
+
+# Clean passwords: replace identifying entries
+alldata <- alldata %>%
+  mutate(
+    PASSWORD = case_when(
+      PASSWORD == "Powerisgay2!" ~ "Power2",
+      PASSWORD == "K1lc0yne$402" ~ "Health$402",
+      PASSWORD == "Charlie1203" ~ "Health1203",
+      PASSWORD == "aaron4103" ~ "health4103",
+      PASSWORD == "brandonc1248" ~ "health1248",
+      PASSWORD == "joyas1244" ~ "health1244",
+      PASSWORD == "olive0925" ~ "health0925",
+      TRUE ~ PASSWORD
+    )
+  )
+
+alldata <- alldata %>%
+  mutate(
+    CLASS = factor(
+      CLASS,
+      levels = c("1", "2", "3"),
+      labels = c("PH322", "ANTH206", "Peer Mentor / TA")
+    )
+  )
+```
+
+This chapter examines your **beliefs about competition**, **cultural orientation**, and **social identity perceptions**. These constructs shape how you relate to others, whether you value independence or interdependence, how you view competition in society, and how you perceive the advantages and disadvantages of different social identities --- all essential for designing culturally and linguistically appropriate health communication for diverse and hard-to-reach populations.
+
+::: {.callout-important}
+## PH 322 — Week 7: Audience Profile Based on Hard-to-Reach Populations
+This week explores trusted messengers, social network theory, digital equity, and culturally-informed communication strategies. Your scores on competition beliefs, individualism-collectivism, and social identity perceptions help you understand how cultural values and social position influence receptivity to health messages.
+:::
+
+---
+
+## Lay Beliefs about Competition Scale
+
+### Constructs {.unnumbered}
+
+The **Lay Beliefs about Competition Scale** ([Murayama & Elliot, 2012](https://doi.org/10.1037/a0027346)) measures beliefs about the consequences of competition across two overarching dimensions:
+
+**Positive Competition Beliefs:**
+
+- **Performance**: Belief that competition makes people work harder, perform better, and set goals
+- **Character**: Belief that competition makes people stronger, builds character, and develops self-confidence
+- **Innovation**: Belief that competition prompts new solutions, encourages innovation, and breeds imagination
+
+**Negative Competition Beliefs:**
+
+- **Unethical Behavior**: Belief that competition leads to cheating, rule violations, and unethical behavior
+- **Self-Harm**: Belief that competition damages self-confidence, hurts self-esteem, and creates self-doubt
+- **Social Harm**: Belief that competition creates negative feelings, enemies, and divides people
+
+### Measures {.unnumbered}
+
+The scale contains 18 items across six subscales (3 items each) rated on a 6-point scale: 1 = *Strongly Disagree*, 2 = *Disagree*, 3 = *Slightly Disagree*, 4 = *Slightly Agree*, 5 = *Agree*, 6 = *Strongly Agree*.
+
+**Example items:**
+
+- Performance: *"Competition makes people work harder"*
+- Character: *"Competition makes people stronger"*
+- Innovation: *"Competition prompts people to seek new solutions"*
+- Unethical Behavior: *"Competition leads to cheating"*
+- Self-Harm: *"Competition damages self-confidence"*
+- Social Harm: *"Competition creates negative feelings about others"*
+
+```{r}
+#| label: competition-compute
+
+comp_data <- alldata %>%
+  select(CLASS, PASSWORD, all_of(paste0("LAYBELIEFSCOMP_", 1:18))) %>%
+  mutate(across(starts_with("LAYBELIEFSCOMP_"), ~ as.numeric(.)))
+
+# Step 1: Compute 6 subscales
+comp_data <- comp_data %>%
+  mutate(
+    comp_performance = rowMeans(pick(LAYBELIEFSCOMP_1, LAYBELIEFSCOMP_2, LAYBELIEFSCOMP_3), na.rm = TRUE),
+    comp_character   = rowMeans(pick(LAYBELIEFSCOMP_4, LAYBELIEFSCOMP_5, LAYBELIEFSCOMP_6), na.rm = TRUE),
+    comp_innovation  = rowMeans(pick(LAYBELIEFSCOMP_7, LAYBELIEFSCOMP_8, LAYBELIEFSCOMP_9), na.rm = TRUE),
+    comp_unethical   = rowMeans(pick(LAYBELIEFSCOMP_10, LAYBELIEFSCOMP_11, LAYBELIEFSCOMP_12), na.rm = TRUE),
+    comp_self_harm   = rowMeans(pick(LAYBELIEFSCOMP_13, LAYBELIEFSCOMP_14, LAYBELIEFSCOMP_15), na.rm = TRUE),
+    comp_social_harm = rowMeans(pick(LAYBELIEFSCOMP_16, LAYBELIEFSCOMP_17, LAYBELIEFSCOMP_18), na.rm = TRUE)
+  )
+
+# Step 2: Compute overall positive/negative
+comp_data <- comp_data %>%
+  mutate(
+    comp_positive = rowMeans(pick(comp_performance, comp_character, comp_innovation), na.rm = TRUE),
+    comp_negative = rowMeans(pick(comp_unethical, comp_self_harm, comp_social_harm), na.rm = TRUE)
+  )
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: competition-password-table-pos
+
+comp_password <- comp_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  select(PASSWORD, comp_performance, comp_character, comp_innovation,
+         comp_unethical, comp_self_harm, comp_social_harm) %>%
+  arrange(PASSWORD)
+
+comp_table_pos <- comp_password %>%
+  select(PASSWORD, comp_performance, comp_character, comp_innovation) %>%
+  mutate(
+    perf_pct = add_percentile(comp_performance),
+    char_pct = add_percentile(comp_character),
+    innov_pct = add_percentile(comp_innovation)
+  ) %>%
+  select(PASSWORD, comp_performance, perf_pct, comp_character, char_pct, comp_innovation, innov_pct)
+
+kbl(comp_table_pos,
+    digits = 2,
+    escape = FALSE,
+    col.names = c("Password",
+                   "<span style='color:#06d6a0'>Performance</span>",
+                   "<span style='color:#06d6a0'>Perf(%)</span>",
+                   "<span style='color:#1b9e77'>Character</span>",
+                   "<span style='color:#1b9e77'>Char(%)</span>",
+                   "<span style='color:#118ab2'>Innovation</span>",
+                   "<span style='color:#118ab2'>Innov(%)</span>"),
+    caption = "Lay Beliefs about Competition: Positive Subscales") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = TRUE)
+```
+
+```{r}
+#| label: competition-password-table-neg
+
+comp_table_neg <- comp_password %>%
+  select(PASSWORD, comp_unethical, comp_self_harm, comp_social_harm) %>%
+  mutate(
+    uneth_pct = add_percentile(comp_unethical),
+    sh_pct    = add_percentile(comp_self_harm),
+    soch_pct  = add_percentile(comp_social_harm)
+  ) %>%
+  select(PASSWORD, comp_unethical, uneth_pct, comp_self_harm, sh_pct, comp_social_harm, soch_pct)
+
+kbl(comp_table_neg,
+    digits = 2,
+    escape = FALSE,
+    col.names = c("Password",
+                   "<span style='color:#ef476f'>Unethical</span>",
+                   "<span style='color:#ef476f'>Uneth(%)</span>",
+                   "<span style='color:#d62828'>Self-Harm</span>",
+                   "<span style='color:#d62828'>SH(%)</span>",
+                   "<span style='color:#9b2226'>Social Harm</span>",
+                   "<span style='color:#9b2226'>SocH(%)</span>"),
+    caption = "Lay Beliefs about Competition: Negative Subscales") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = TRUE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: competition-density-positive
+#| fig-cap: "Lay Beliefs about Competition: Positive beliefs. Dashed lines indicate 33rd and 67th percentiles."
+#| fig-width: 14
+#| fig-height: 5
+
+comp_long <- comp_data %>%
+  select(CLASS, comp_performance, comp_character, comp_innovation,
+         comp_unethical, comp_self_harm, comp_social_harm) %>%
+  pivot_longer(cols = starts_with("comp_"), names_to = "subscale", values_to = "score") %>%
+  mutate(
+    subscale = recode(subscale,
+      comp_performance = "Performance", comp_character = "Character",
+      comp_innovation = "Innovation", comp_unethical = "Unethical Behavior",
+      comp_self_harm = "Self-Harm", comp_social_harm = "Social Harm"),
+    dimension = ifelse(subscale %in% c("Performance", "Character", "Innovation"),
+                       "Positive", "Negative"),
+    subscale = factor(subscale, levels = c("Performance", "Character", "Innovation",
+      "Unethical Behavior", "Self-Harm", "Social Harm"))
+  )
+
+comp_colors_map <- c(
+  "Performance" = "#06d6a0", "Character" = "#1b9e77", "Innovation" = "#118ab2",
+  "Unethical Behavior" = "#ef476f", "Self-Harm" = "#d62828", "Social Harm" = "#9b2226"
+)
+
+make_comp_plot <- function(name, color) {
+  d <- comp_long %>% filter(subscale == name)
+  q33 <- quantile(d$score, probs = 1/3, na.rm = TRUE)
+  q67 <- quantile(d$score, probs = 2/3, na.rm = TRUE)
+  ggdensity(d, x = "score", fill = color, color = color, alpha = 0.4) +
+    geom_vline(xintercept = q33, linetype = "dashed", color = color, linewidth = 0.6) +
+    geom_vline(xintercept = q67, linetype = "dashed", color = color, linewidth = 0.6) +
+    coord_cartesian(xlim = c(1, 6)) +
+    scale_x_continuous(breaks = 1:6, labels = c("Strongly\nDisagree (1)", "Disagree\n(2)", "Slightly\nDisagree (3)", "Slightly\nAgree (4)", "Agree\n(5)", "Strongly\nAgree (6)")) +
+    labs(title = name, x = "Composite Score", y = "Density") +
+    theme_minimal() + theme(legend.position = "none", plot.title = element_text(size = 10), axis.text.x = element_text(size = 6))
+}
+
+p_perf <- make_comp_plot("Performance", comp_colors_map["Performance"])
+p_char <- make_comp_plot("Character", comp_colors_map["Character"])
+p_innov <- make_comp_plot("Innovation", comp_colors_map["Innovation"])
+
+p_perf + p_char + p_innov +
+  plot_annotation(
+    title = "All Participants: Lay Beliefs about Competition -- Positive (Murayama & Elliot, 2012)",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+```{r}
+#| label: competition-density-negative
+#| fig-cap: "Lay Beliefs about Competition: Negative beliefs. Dashed lines indicate 33rd and 67th percentiles."
+#| fig-width: 14
+#| fig-height: 5
+
+p_uneth <- make_comp_plot("Unethical Behavior", comp_colors_map["Unethical Behavior"])
+p_selfh <- make_comp_plot("Self-Harm", comp_colors_map["Self-Harm"])
+p_soch <- make_comp_plot("Social Harm", comp_colors_map["Social Harm"])
+
+p_uneth + p_selfh + p_soch +
+  plot_annotation(
+    title = "All Participants: Lay Beliefs about Competition -- Negative (Murayama & Elliot, 2012)",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## Individualism vs. Collectivism Scale
+
+### Constructs {.unnumbered}
+
+The **Individualism vs. Collectivism Scale** ([Triandis & Gelfand, 1998](https://doi.org/10.1037/0022-3514.74.1.118)) measures four cultural orientations that combine two dimensions --- independence vs. interdependence and equality vs. hierarchy:
+
+- **Horizontal Individualism**: Valuing independence and self-reliance without emphasis on status
+- **Vertical Individualism**: Valuing competition, status, and being better than others
+- **Horizontal Collectivism**: Valuing cooperation, sociability, and the well-being of the group
+- **Vertical Collectivism**: Valuing duty, family sacrifice, and respect for group decisions
+
+### Measures {.unnumbered}
+
+The scale contains 16 items (4 per orientation) rated on a 9-point scale: 1 = *Never or Definitely No*, 9 = *Always or Definitely Yes*. Higher scores indicate stronger endorsement of that orientation.
+
+**Example items:**
+
+- Horizontal Individualism: *"I'd rather depend on myself than others."*
+- Vertical Individualism: *"It is important that I do my job better than others."*
+- Horizontal Collectivism: *"If a coworker gets a prize, I would feel proud."*
+- Vertical Collectivism: *"Parents and children must stay together as much as possible."*
+
+```{r}
+#| label: indcol-compute
+
+indcol_data <- alldata %>%
+  select(CLASS, PASSWORD, matches("^INDIVIUALVSCOLLECTIV_\\d+$")) %>%
+  mutate(across(starts_with("INDIVIUALVSCOLLECTIV_"), ~ as.numeric(.)))
+
+# Qualtrics export columns 1-16 map to:
+# HI: cols 1-4, VI: cols 5-8, HC: cols 9-12, VC: cols 13-16
+indcol_data <- indcol_data %>%
+  mutate(
+    horizontal_ind = rowMeans(pick(
+      INDIVIUALVSCOLLECTIV_1, INDIVIUALVSCOLLECTIV_2,
+      INDIVIUALVSCOLLECTIV_3, INDIVIUALVSCOLLECTIV_4), na.rm = TRUE),
+    vertical_ind = rowMeans(pick(
+      INDIVIUALVSCOLLECTIV_5, INDIVIUALVSCOLLECTIV_6,
+      INDIVIUALVSCOLLECTIV_7, INDIVIUALVSCOLLECTIV_8), na.rm = TRUE),
+    horizontal_col = rowMeans(pick(
+      INDIVIUALVSCOLLECTIV_9, INDIVIUALVSCOLLECTIV_10,
+      INDIVIUALVSCOLLECTIV_11, INDIVIUALVSCOLLECTIV_12), na.rm = TRUE),
+    vertical_col = rowMeans(pick(
+      INDIVIUALVSCOLLECTIV_13, INDIVIUALVSCOLLECTIV_14,
+      INDIVIUALVSCOLLECTIV_15, INDIVIUALVSCOLLECTIV_16), na.rm = TRUE)
+  )
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: indcol-password-table-a
+
+indcol_password <- indcol_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  select(PASSWORD, horizontal_ind, vertical_ind, horizontal_col, vertical_col) %>%
+  arrange(PASSWORD)
+
+indcol_table_a <- indcol_password %>%
+  select(PASSWORD, horizontal_ind, vertical_ind) %>%
+  mutate(
+    hi_pct = add_percentile(horizontal_ind),
+    vi_pct = add_percentile(vertical_ind)
+  ) %>%
+  select(PASSWORD, horizontal_ind, hi_pct, vertical_ind, vi_pct)
+
+kbl(indcol_table_a,
+    digits = 2,
+    escape = FALSE,
+    col.names = c("Password",
+                   paste0("<span style='color:", colors_hi, "'>Horizontal Individualism</span>"),
+                   paste0("<span style='color:", colors_hi, "'>HI(%)</span>"),
+                   paste0("<span style='color:", colors_vi, "'>Vertical Individualism</span>"),
+                   paste0("<span style='color:", colors_vi, "'>VI(%)</span>")),
+    caption = "Individualism vs. Collectivism: Individualism Subscales") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = TRUE)
+```
+
+```{r}
+#| label: indcol-password-table-b
+
+indcol_table_b <- indcol_password %>%
+  select(PASSWORD, horizontal_col, vertical_col) %>%
+  mutate(
+    hc_pct = add_percentile(horizontal_col),
+    vc_pct = add_percentile(vertical_col)
+  ) %>%
+  select(PASSWORD, horizontal_col, hc_pct, vertical_col, vc_pct)
+
+kbl(indcol_table_b,
+    digits = 2,
+    escape = FALSE,
+    col.names = c("Password",
+                   paste0("<span style='color:", colors_hc, "'>Horizontal Collectivism</span>"),
+                   paste0("<span style='color:", colors_hc, "'>HC(%)</span>"),
+                   paste0("<span style='color:", colors_vc, "'>Vertical Collectivism</span>"),
+                   paste0("<span style='color:", colors_vc, "'>VC(%)</span>")),
+    caption = "Individualism vs. Collectivism: Collectivism Subscales") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = TRUE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: indcol-density-pair1
+#| fig-cap: "Individualism vs. Collectivism: Individualism orientations. Dashed lines indicate 33rd and 67th percentiles."
+#| fig-width: 12
+#| fig-height: 5
+
+indcol_long <- indcol_data %>%
+  select(CLASS, horizontal_ind, vertical_ind, horizontal_col, vertical_col) %>%
+  pivot_longer(cols = c(horizontal_ind, vertical_ind, horizontal_col, vertical_col),
+    names_to = "orientation", values_to = "score") %>%
+  mutate(
+    orientation = recode(orientation,
+      horizontal_ind = "Horizontal Individualism", vertical_ind = "Vertical Individualism",
+      horizontal_col = "Horizontal Collectivism", vertical_col = "Vertical Collectivism"),
+    orientation = factor(orientation, levels = c("Horizontal Individualism", "Vertical Individualism",
+      "Horizontal Collectivism", "Vertical Collectivism"))
+  )
+
+indcol_colors <- c("Horizontal Individualism" = colors_hi, "Vertical Individualism" = colors_vi,
+  "Horizontal Collectivism" = colors_hc, "Vertical Collectivism" = colors_vc)
+
+make_indcol_plot <- function(name, color) {
+  d <- indcol_long %>% filter(orientation == name)
+  q33 <- quantile(d$score, probs = 1/3, na.rm = TRUE)
+  q67 <- quantile(d$score, probs = 2/3, na.rm = TRUE)
+  ggdensity(d, x = "score", fill = color, color = color, alpha = 0.4) +
+    geom_vline(xintercept = q33, linetype = "dashed", color = color, linewidth = 0.6) +
+    geom_vline(xintercept = q67, linetype = "dashed", color = color, linewidth = 0.6) +
+    coord_cartesian(xlim = c(1, 9)) + scale_x_continuous(breaks = c(1, 5, 9), labels = c("Never/\nDef. No (1)", "(5)", "Always/\nDef. Yes (9)")) +
+    labs(title = name, x = "Composite Score", y = "Density") +
+    theme_minimal() + theme(legend.position = "none", plot.title = element_text(size = 10))
+}
+
+p_hi <- make_indcol_plot("Horizontal Individualism", colors_hi)
+p_vi <- make_indcol_plot("Vertical Individualism", colors_vi)
+
+p_hi + p_vi +
+  plot_annotation(
+    title = "All Participants: Individualism (Triandis & Gelfand, 1998)",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+```{r}
+#| label: indcol-density-pair2
+#| fig-cap: "Individualism vs. Collectivism: Collectivism orientations. Dashed lines indicate 33rd and 67th percentiles."
+#| fig-width: 12
+#| fig-height: 5
+
+p_hc <- make_indcol_plot("Horizontal Collectivism", colors_hc)
+p_vc <- make_indcol_plot("Vertical Collectivism", colors_vc)
+
+p_hc + p_vc +
+  plot_annotation(
+    title = "All Participants: Collectivism (Triandis & Gelfand, 1998)",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## Social Identity Perceptions
+
+### Constructs {.unnumbered}
+
+The **Social Identity Perceptions** items (GENBELIEFS4) measure how much you believe each social identity helps or hurts people's ability to get ahead in the United States. These perceptions reflect your awareness of structural advantages and disadvantages associated with race, gender, religion, class, and nationality.
+
+### Measures {.unnumbered}
+
+The scale contains 16 items, each rating a different social identity on a 5-point scale: 1 = *Hurts a Lot*, 2 = *Hurts a Little*, 3 = *Neither Helps nor Hurts*, 4 = *Helps a Little*, 5 = *Helps a Lot*.
+
+**Example item:**
+
+- *"Being White"* --- rated on how much it helps or hurts a person's ability to get ahead in the U.S.
+
+```{r}
+#| label: social-identity-compute
+
+identity_data <- alldata %>%
+  select(CLASS, PASSWORD, all_of(paste0("GENBELIEFS4_", 1:16))) %>%
+  mutate(across(starts_with("GENBELIEFS4_"), ~ as.numeric(.)))
+
+# Labels for the 16 identity items
+identity_labels <- c(
+  "Being White", "Being Asian", "Being Native American", "Being Hispanic/Latine",
+  "Being Middle Eastern/North African", "Being Evangelical Christian", "Being Jewish",
+  "Being Muslim", "Being a Cisman", "Being a Ciswoman", "Being a Transman",
+  "Being a Transwoman", "Being Wealthy", "Being Poor", "Being American",
+  "Being Not American"
+)
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: social-identity-table-race
+
+identity_password <- identity_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  select(PASSWORD, all_of(paste0("GENBELIEFS4_", 1:16))) %>%
+  arrange(PASSWORD)
+
+identity_race <- identity_password %>%
+  select(PASSWORD, GENBELIEFS4_1, GENBELIEFS4_2, GENBELIEFS4_3, GENBELIEFS4_4, GENBELIEFS4_5)
+
+kbl(identity_race,
+    digits = 1,
+    col.names = c("Password", "Being White", "Being Asian", "Being Native American", "Being Hispanic/Latine", "Being MENA"),
+    caption = "Social Identity Perceptions — Race/Ethnicity (1=Hurts a Lot to 5=Helps a Lot)") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = TRUE)
+```
+
+```{r}
+#| label: social-identity-bar-race
+#| fig-cap: "Race/Ethnicity Perceptions: Average ratings of how much each racial/ethnic identity helps or hurts getting ahead. Dashed line at 3 = Neither Helps nor Hurts."
+#| fig-width: 10
+#| fig-height: 4
+
+identity_long <- identity_data %>%
+  select(starts_with("GENBELIEFS4_")) %>%
+  pivot_longer(cols = everything(), names_to = "item", values_to = "score") %>%
+  mutate(
+    item_num = as.numeric(str_extract(item, "\\d+$")),
+    identity = factor(identity_labels[item_num], levels = rev(identity_labels))
+  )
+
+avg_identity <- identity_long %>%
+  group_by(identity) %>%
+  summarise(avg = mean(score, na.rm = TRUE)) %>%
+  mutate(bar_color = ifelse(avg >= 3, colors_helps, colors_hurts))
+
+race_items <- c("Being White", "Being Asian", "Being Native American", "Being Hispanic/Latine", "Being Middle Eastern/North African")
+
+avg_race <- avg_identity %>%
+  filter(identity %in% race_items) %>%
+  mutate(identity = factor(identity, levels = rev(race_items)))
+
+ggplot(avg_race, aes(x = avg, y = identity)) +
+  geom_segment(aes(x = 3, xend = avg, y = identity, yend = identity, color = bar_color), linewidth = 1.5) +
+  geom_point(aes(color = bar_color), size = 3) +
+  geom_vline(xintercept = 3, linetype = "dashed", color = "gray40", linewidth = 0.6) +
+  scale_color_identity() +
+  scale_x_continuous(
+    breaks = 1:5,
+    labels = c("Hurts a\nLot (1)", "Hurts a\nLittle (2)", "Neither\n(3)", "Helps a\nLittle (4)", "Helps a\nLot (5)")
+  ) +
+  coord_cartesian(xlim = c(1, 5)) +
+  labs(
+    title = "Race/Ethnicity: Social Identity Perceptions",
+    subtitle = "Average rating | Dashed line = neutral",
+    x = "Average Score",
+    y = NULL
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+#| label: social-identity-table-religion
+
+identity_religion <- identity_password %>%
+  select(PASSWORD, GENBELIEFS4_6, GENBELIEFS4_7, GENBELIEFS4_8)
+
+kbl(identity_religion,
+    digits = 1,
+    col.names = c("Password", "Being Evangelical Christian", "Being Jewish", "Being Muslim"),
+    caption = "Social Identity Perceptions — Religious Identity (1=Hurts a Lot to 5=Helps a Lot)") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = TRUE)
+```
+
+```{r}
+#| label: social-identity-bar-religion
+#| fig-cap: "Religious Identity Perceptions: Average ratings of how much each religious identity helps or hurts getting ahead. Dashed line at 3 = Neither Helps nor Hurts."
+#| fig-width: 10
+#| fig-height: 3.5
+
+religion_items <- c("Being Evangelical Christian", "Being Jewish", "Being Muslim")
+
+avg_religion <- avg_identity %>%
+  filter(identity %in% religion_items) %>%
+  mutate(identity = factor(identity, levels = rev(religion_items)))
+
+ggplot(avg_religion, aes(x = avg, y = identity)) +
+  geom_segment(aes(x = 3, xend = avg, y = identity, yend = identity, color = bar_color), linewidth = 1.5) +
+  geom_point(aes(color = bar_color), size = 3) +
+  geom_vline(xintercept = 3, linetype = "dashed", color = "gray40", linewidth = 0.6) +
+  scale_color_identity() +
+  scale_x_continuous(
+    breaks = 1:5,
+    labels = c("Hurts a\nLot (1)", "Hurts a\nLittle (2)", "Neither\n(3)", "Helps a\nLittle (4)", "Helps a\nLot (5)")
+  ) +
+  coord_cartesian(xlim = c(1, 5)) +
+  labs(
+    title = "Religious Identity: Social Identity Perceptions",
+    subtitle = "Average rating | Dashed line = neutral",
+    x = "Average Score",
+    y = NULL
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+#| label: social-identity-table-gender
+
+identity_gender <- identity_password %>%
+  select(PASSWORD, GENBELIEFS4_9, GENBELIEFS4_10, GENBELIEFS4_11, GENBELIEFS4_12)
+
+kbl(identity_gender,
+    digits = 1,
+    col.names = c("Password", "Being a Cisman", "Being a Ciswoman", "Being a Transman", "Being a Transwoman"),
+    caption = "Social Identity Perceptions — Gender Identity (1=Hurts a Lot to 5=Helps a Lot)") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = TRUE)
+```
+
+```{r}
+#| label: social-identity-bar-gender
+#| fig-cap: "Gender Identity Perceptions: Average ratings of how much each gender identity helps or hurts getting ahead. Dashed line at 3 = Neither Helps nor Hurts."
+#| fig-width: 10
+#| fig-height: 4
+
+gender_items <- c("Being a Cisman", "Being a Ciswoman", "Being a Transman", "Being a Transwoman")
+
+avg_gender <- avg_identity %>%
+  filter(identity %in% gender_items) %>%
+  mutate(identity = factor(identity, levels = rev(gender_items)))
+
+ggplot(avg_gender, aes(x = avg, y = identity)) +
+  geom_segment(aes(x = 3, xend = avg, y = identity, yend = identity, color = bar_color), linewidth = 1.5) +
+  geom_point(aes(color = bar_color), size = 3) +
+  geom_vline(xintercept = 3, linetype = "dashed", color = "gray40", linewidth = 0.6) +
+  scale_color_identity() +
+  scale_x_continuous(
+    breaks = 1:5,
+    labels = c("Hurts a\nLot (1)", "Hurts a\nLittle (2)", "Neither\n(3)", "Helps a\nLittle (4)", "Helps a\nLot (5)")
+  ) +
+  coord_cartesian(xlim = c(1, 5)) +
+  labs(
+    title = "Gender Identity: Social Identity Perceptions",
+    subtitle = "Average rating | Dashed line = neutral",
+    x = "Average Score",
+    y = NULL
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r}
+#| label: social-identity-table-class
+
+identity_class <- identity_password %>%
+  select(PASSWORD, GENBELIEFS4_13, GENBELIEFS4_14, GENBELIEFS4_15, GENBELIEFS4_16)
+
+kbl(identity_class,
+    digits = 1,
+    col.names = c("Password", "Being Wealthy", "Being Poor", "Being American", "Being Not American"),
+    caption = "Social Identity Perceptions — Class/Nationality (1=Hurts a Lot to 5=Helps a Lot)") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = TRUE)
+```
+
+```{r}
+#| label: social-identity-bar-class
+#| fig-cap: "Class/Nationality Perceptions: Average ratings of how much each class/nationality identity helps or hurts getting ahead. Dashed line at 3 = Neither Helps nor Hurts."
+#| fig-width: 10
+#| fig-height: 4
+
+class_items <- c("Being Wealthy", "Being Poor", "Being American", "Being Not American")
+
+avg_class <- avg_identity %>%
+  filter(identity %in% class_items) %>%
+  mutate(identity = factor(identity, levels = rev(class_items)))
+
+ggplot(avg_class, aes(x = avg, y = identity)) +
+  geom_segment(aes(x = 3, xend = avg, y = identity, yend = identity, color = bar_color), linewidth = 1.5) +
+  geom_point(aes(color = bar_color), size = 3) +
+  geom_vline(xintercept = 3, linetype = "dashed", color = "gray40", linewidth = 0.6) +
+  scale_color_identity() +
+  scale_x_continuous(
+    breaks = 1:5,
+    labels = c("Hurts a\nLot (1)", "Hurts a\nLittle (2)", "Neither\n(3)", "Helps a\nLittle (4)", "Helps a\nLot (5)")
+  ) +
+  coord_cartesian(xlim = c(1, 5)) +
+  labs(
+    title = "Class/Nationality: Social Identity Perceptions",
+    subtitle = "Average rating | Dashed line = neutral",
+    x = "Average Score",
+    y = NULL
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: social-identity-bar-all
+#| fig-cap: "Social Identity Perceptions: Average ratings of how much each identity helps or hurts getting ahead. Dashed line at 3 = Neither Helps nor Hurts."
+#| fig-width: 12
+#| fig-height: 7
+
+ggplot(avg_identity, aes(x = avg, y = identity)) +
+  geom_segment(aes(x = 3, xend = avg, y = identity, yend = identity, color = bar_color), linewidth = 1.5) +
+  geom_point(aes(color = bar_color), size = 3) +
+  geom_vline(xintercept = 3, linetype = "dashed", color = "gray40", linewidth = 0.6) +
+  scale_color_identity() +
+  scale_x_continuous(
+    breaks = 1:5,
+    labels = c("Hurts a\nLot (1)", "Hurts a\nLittle (2)", "Neither\n(3)", "Helps a\nLittle (4)", "Helps a\nLot (5)")
+  ) +
+  coord_cartesian(xlim = c(1, 5)) +
+  labs(
+    title = "All Participants: Social Identity Perceptions",
+    subtitle = "Average rating of how each identity helps or hurts getting ahead | Dashed line = neutral",
+    x = "Average Score",
+    y = NULL
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+---
+
+## References {.unnumbered}
+
+Murayama, K., & Elliot, A. J. (2012). The competition--performance relation: A meta-analytic review and test of the opposing processes model of competition and performance. *Psychological Bulletin*, *138*(6), 1035--1070. <https://doi.org/10.1037/a0027346>
+
+Triandis, H. C., & Gelfand, M. J. (1998). Converging measurement of horizontal and vertical individualism and collectivism. *Journal of Personality and Social Psychology*, *74*(1), 118--128. <https://doi.org/10.1037/0022-3514.74.1.118>

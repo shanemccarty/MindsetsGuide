@@ -1,0 +1,695 @@
+# Psychological Beliefs {#sec-psychological-beliefs}
+
+```{r}
+#| label: setup-ch3
+#| include: false
+
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+library(patchwork)
+library(kableExtra)
+
+# ---- Percentile Helper ----
+add_percentile <- function(x) {
+  pct <- round(percent_rank(x) * 100)
+  label <- case_when(
+    pct < 33.33 ~ "low",
+    pct < 66.67 ~ "mid",
+    TRUE ~ "high"
+  )
+  paste0(pct, "% (", label, ")")
+}
+
+# ---- Color Palette for Chapter 3 ----
+colors_freewill      <- "#e07a5f"   # terra cotta — free will
+colors_determinism   <- "#3d405b"   # charcoal blue — scientific determinism
+colors_fatalism      <- "#81b29a"   # sage — fatalistic determinism
+colors_unpredictable <- "#f2cc8f"   # sandy gold — unpredictability
+
+colors_nutrition_se  <- "#e76f51"   # burnt orange — nutrition self-efficacy
+colors_exercise_se   <- "#264653"   # dark teal — exercise self-efficacy
+
+colors_avoid_gen     <- "#9b2226"   # dark red — general avoidance
+colors_avoid_dep     <- "#ae2012"   # crimson — depression avoidance
+
+# ---- Load & Prepare Data ----
+alldata <- read_csv("data/survey_data.csv", show_col_types = FALSE)
+
+alldata <- alldata %>%
+  filter(
+    !is.na(PASSWORD),
+    PASSWORD != "PASSWORD",
+    !grepl("ImportId", PASSWORD, fixed = TRUE),
+    !grepl("ImportId", YEAR, fixed = TRUE),
+    PASSWORD != "What is the current year?",
+    YEAR != "What is the current year?"
+  )
+
+# Remove duplicate olive0925 (keep first occurrence, drop second)
+olive_rows <- which(alldata$PASSWORD == "olive0925")
+if (length(olive_rows) > 1) {
+  alldata <- alldata[-olive_rows[-1], ]
+}
+
+# Clean passwords: replace identifying entries
+alldata <- alldata %>%
+  mutate(
+    PASSWORD = case_when(
+      PASSWORD == "Powerisgay2!" ~ "Power2",
+      PASSWORD == "K1lc0yne$402" ~ "Health$402",
+      PASSWORD == "Charlie1203" ~ "Health1203",
+      PASSWORD == "aaron4103" ~ "health4103",
+      PASSWORD == "brandonc1248" ~ "health1248",
+      PASSWORD == "joyas1244" ~ "health1244",
+      PASSWORD == "olive0925" ~ "health0925",
+      TRUE ~ PASSWORD
+    )
+  )
+
+alldata <- alldata %>%
+  mutate(
+    CLASS = factor(
+      CLASS,
+      levels = c("1", "2", "3"),
+      labels = c("PH322", "ANTH206", "Peer Mentor / TA")
+    )
+  )
+```
+
+This chapter explores five measures of **psychological beliefs** that shape how people think about control, agency, self-efficacy, and information seeking. These beliefs are critical for health communication because they influence whether audiences feel empowered to change their behavior, whether they seek or avoid health information, and what types of behavior change strategies are most effective.
+
+::: {.callout-important}
+## PH 322 — Week 5: Behavioral Theory & Methods
+This week applies behavior change theory to health communication. Your scores on free will beliefs, self-efficacy, and information avoidance help you understand how these psychological factors influence receptivity to health messages and the design of behavior change interventions.
+:::
+
+---
+
+## Free Will & Determinism (FAD-Plus)
+
+### Constructs {.unnumbered}
+
+The **FAD-Plus** ([Paulhus & Carey, 2011](https://doi.org/10.1080/00223891.2011.536216)) measures lay beliefs about free will and determinism across four subscales:
+
+- **Free Will**: Belief that people have complete control over their decisions and are responsible for their actions
+- **Scientific Determinism**: Belief that biology, genetics, environment, and science determine behavior
+- **Fatalistic Determinism**: Belief that fate, destiny, and mysterious forces control life outcomes
+- **Unpredictability**: Belief that life is random, unpredictable, and governed by chance
+
+### Measures {.unnumbered}
+
+The FAD-Plus contains 27 items across four subscales (Free Will: 7 items; Scientific Determinism: 7 items; Fatalistic Determinism: 5 items; Unpredictability: 8 items) rated on a 5-point scale: 1 = *Strongly Disagree*, 5 = *Strongly Agree*. Higher scores indicate stronger endorsement of that belief.
+
+**Example items:**
+
+- Free Will: *"People have complete control over the decisions they make."*
+- Scientific Determinism: *"People's biological makeup determines their talents and personality."*
+- Fatalistic Determinism: *"I believe that the future has already been determined by fate."*
+- Unpredictability: *"Chance events seem to be the major cause of human history."*
+
+```{r}
+#| label: fad-compute
+
+fad_data <- alldata %>%
+  select(CLASS, PASSWORD, all_of(paste0("FREEWILL_", 1:27))) %>%
+  mutate(across(starts_with("FREEWILL_"), ~ as.numeric(.)))
+
+fad_data <- fad_data %>%
+  mutate(
+    fad_freewill = rowMeans(
+      pick( FREEWILL_4, FREEWILL_8, FREEWILL_12, FREEWILL_16,
+             FREEWILL_21, FREEWILL_23, FREEWILL_26),
+      na.rm = TRUE
+    ),
+    fad_scientific_det = rowMeans(
+      pick( FREEWILL_2, FREEWILL_6, FREEWILL_10, FREEWILL_14,
+             FREEWILL_18, FREEWILL_22, FREEWILL_24),
+      na.rm = TRUE
+    ),
+    fad_fatalistic_det = rowMeans(
+      pick( FREEWILL_1, FREEWILL_5, FREEWILL_9, FREEWILL_13, FREEWILL_17),
+      na.rm = TRUE
+    ),
+    fad_unpredictability = rowMeans(
+      pick( FREEWILL_3, FREEWILL_7, FREEWILL_11, FREEWILL_15,
+             FREEWILL_19, FREEWILL_20, FREEWILL_25, FREEWILL_27),
+      na.rm = TRUE
+    )
+  )
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: fad-password-table-a
+
+fad_password <- fad_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  select(PASSWORD, fad_freewill, fad_scientific_det, fad_fatalistic_det, fad_unpredictability) %>%
+  arrange(PASSWORD)
+
+fad_table_a <- fad_password %>%
+  transmute(
+    Password = PASSWORD,
+    `Free Will` = round(fad_freewill, 2),
+    `FW(%)` = add_percentile(fad_freewill),
+    `Sci Det` = round(fad_scientific_det, 2),
+    `SD(%)` = add_percentile(fad_scientific_det)
+  )
+
+kbl(fad_table_a,
+    escape = FALSE,
+    col.names = c("Password",
+                   paste0("<span style='color:", colors_freewill, "'>Free Will</span>"),
+                   paste0("<span style='color:", colors_freewill, "'>FW(%)</span>"),
+                   paste0("<span style='color:", colors_determinism, "'>Sci Det</span>"),
+                   paste0("<span style='color:", colors_determinism, "'>SD(%)</span>")),
+    caption = "FAD-Plus (A): Free Will & Scientific Determinism") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE)
+```
+
+```{r}
+#| label: fad-password-table-b
+
+fad_table_b <- fad_password %>%
+  transmute(
+    Password = PASSWORD,
+    `Fat Det` = round(fad_fatalistic_det, 2),
+    `FD(%)` = add_percentile(fad_fatalistic_det),
+    `Unpred` = round(fad_unpredictability, 2),
+    `UP(%)` = add_percentile(fad_unpredictability)
+  )
+
+kbl(fad_table_b,
+    escape = FALSE,
+    col.names = c("Password",
+                   paste0("<span style='color:", colors_fatalism, "'>Fat Det</span>"),
+                   paste0("<span style='color:", colors_fatalism, "'>FD(%)</span>"),
+                   paste0("<span style='color:", colors_unpredictable, "'>Unpred</span>"),
+                   paste0("<span style='color:", colors_unpredictable, "'>UP(%)</span>")),
+    caption = "FAD-Plus (B): Fatalistic Determinism & Unpredictability") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: fad-density-pair1
+#| fig-cap: "FAD-Plus (Pair 1): Free Will and Scientific Determinism. Dashed lines indicate 33rd and 67th percentiles."
+#| fig-width: 12
+#| fig-height: 5
+
+fad_long <- fad_data %>%
+  select(CLASS, fad_freewill, fad_scientific_det, fad_fatalistic_det, fad_unpredictability) %>%
+  pivot_longer(
+    cols = starts_with("fad_"),
+    names_to = "subscale",
+    values_to = "score"
+  ) %>%
+  mutate(
+    subscale = recode(
+      subscale,
+      fad_freewill = "Free Will",
+      fad_scientific_det = "Scientific Determinism",
+      fad_fatalistic_det = "Fatalistic Determinism",
+      fad_unpredictability = "Unpredictability"
+    ),
+    subscale = factor(subscale, levels = c("Free Will", "Scientific Determinism",
+                                           "Fatalistic Determinism", "Unpredictability"))
+  )
+
+fad_colors <- c(
+  "Free Will" = colors_freewill,
+  "Scientific Determinism" = colors_determinism,
+  "Fatalistic Determinism" = colors_fatalism,
+  "Unpredictability" = colors_unpredictable
+)
+
+make_fad_plot <- function(sub_name, sub_color) {
+  d <- fad_long %>% filter(subscale == sub_name)
+  q33 <- quantile(d$score, probs = 1/3, na.rm = TRUE)
+  q67 <- quantile(d$score, probs = 2/3, na.rm = TRUE)
+
+  ggdensity(d, x = "score", fill = sub_color, color = sub_color, alpha = 0.4) +
+    geom_vline(xintercept = q33, linetype = "dashed", color = sub_color, linewidth = 0.6) +
+    geom_vline(xintercept = q67, linetype = "dashed", color = sub_color, linewidth = 0.6) +
+    coord_cartesian(xlim = c(1, 5)) +
+    scale_x_continuous(breaks = 1:5, labels = c("Strongly\nDisagree (1)", "(2)", "(3)", "(4)", "Strongly\nAgree (5)")) +
+    labs(title = sub_name, x = "Composite Score", y = "Density",
+         subtitle = "33rd and 67th percentiles") +
+    theme_minimal() + theme(legend.position = "none")
+}
+
+p_fw <- make_fad_plot("Free Will", colors_freewill)
+p_sd <- make_fad_plot("Scientific Determinism", colors_determinism)
+
+p_fw + p_sd +
+  plot_annotation(
+    title = "All Participants: FAD-Plus -- Free Will & Scientific Determinism",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+```{r}
+#| label: fad-density-pair2
+#| fig-cap: "FAD-Plus (Pair 2): Fatalistic Determinism and Unpredictability. Dashed lines indicate 33rd and 67th percentiles."
+#| fig-width: 12
+#| fig-height: 5
+
+p_fd <- make_fad_plot("Fatalistic Determinism", colors_fatalism)
+p_up <- make_fad_plot("Unpredictability", colors_unpredictable)
+
+p_fd + p_up +
+  plot_annotation(
+    title = "All Participants: FAD-Plus -- Fatalistic Determinism & Unpredictability",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## Health Self-Efficacy
+
+### Constructs {.unnumbered}
+
+The **Health Self-Efficacy Scales** ([Schwarzer & Renner, 2000](https://doi.org/10.1037/0278-6133.19.5.487)) measure your confidence in maintaining healthy behaviors despite common barriers.
+
+- **Nutrition Self-Efficacy**: Your confidence in sticking to healthful foods despite barriers such as needing new routines, repeated attempts, rethinking your diet, lack of support, or needing a detailed plan
+- **Physical Exercise Self-Efficacy**: Your confidence in exercising despite barriers such as worries, depression, tension, tiredness, or being busy
+
+### Measures {.unnumbered}
+
+Each subscale contains 5 items rated on a 4-point scale: 1 = *Very Uncertain*, 2 = *Rather Uncertain*, 3 = *Rather Certain*, 4 = *Very Certain*. Higher scores indicate greater self-efficacy.
+
+**Example items:**
+
+- Nutrition: *"I can manage to stick to healthful foods ...even if I need a long time to develop the necessary routines."*
+- Exercise: *"I can manage to carry out my exercise intentions, ...even when I have worries and problems."*
+
+```{r}
+#| label: health-se-compute
+
+# Nutrition Self-Efficacy
+nutrition_data <- alldata %>%
+  select(CLASS, PASSWORD, all_of(paste0("NUTRITIONEFFICACY_", 1:5))) %>%
+  mutate(across(starts_with("NUTRITIONEFFICACY_"), ~ as.numeric(.)))
+
+nutrition_data <- nutrition_data %>%
+  mutate(
+    nutrition_se = rowMeans(
+      pick( starts_with("NUTRITIONEFFICACY_")), na.rm = TRUE
+    )
+  )
+
+# Physical Exercise Self-Efficacy
+exercise_data <- alldata %>%
+  select(CLASS, PASSWORD, all_of(paste0("EXERCISEEFFICACY_", 1:5))) %>%
+  mutate(across(starts_with("EXERCISEEFFICACY_"), ~ as.numeric(.)))
+
+exercise_data <- exercise_data %>%
+  mutate(
+    exercise_se = rowMeans(
+      pick( starts_with("EXERCISEEFFICACY_")), na.rm = TRUE
+    )
+  )
+
+# Merge both into one table
+health_se_data <- nutrition_data %>%
+  select(PASSWORD, nutrition_se) %>%
+  left_join(exercise_data %>% select(PASSWORD, exercise_se), by = "PASSWORD")
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: health-se-password
+
+health_se_password <- health_se_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  arrange(PASSWORD)
+
+health_se_table <- health_se_password %>%
+  transmute(
+    Password = PASSWORD,
+    `Nutrition SE` = round(nutrition_se, 2),
+    `Nutr(%)` = add_percentile(nutrition_se),
+    `Exercise SE` = round(exercise_se, 2),
+    `Exer(%)` = add_percentile(exercise_se)
+  )
+
+kbl(health_se_table,
+    escape = FALSE,
+    col.names = c("Password",
+                   paste0("<span style='color:", colors_nutrition_se, "'>Nutrition SE</span>"),
+                   paste0("<span style='color:", colors_nutrition_se, "'>Nutr(%)</span>"),
+                   paste0("<span style='color:", colors_exercise_se, "'>Exercise SE</span>"),
+                   paste0("<span style='color:", colors_exercise_se, "'>Exer(%)</span>")),
+    caption = "Health Self-Efficacy: Your Composite Scores") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: health-se-density
+#| fig-cap: "Health Self-Efficacy: Nutrition and Exercise subscales side by side. Dashed lines = 33rd and 67th percentiles."
+#| fig-width: 10
+#| fig-height: 5
+
+q33_nutr <- quantile(nutrition_data$nutrition_se, probs = 1/3, na.rm = TRUE)
+q67_nutr <- quantile(nutrition_data$nutrition_se, probs = 2/3, na.rm = TRUE)
+q33_exer <- quantile(exercise_data$exercise_se, probs = 1/3, na.rm = TRUE)
+q67_exer <- quantile(exercise_data$exercise_se, probs = 2/3, na.rm = TRUE)
+
+se_labels <- c("Very\nUncertain (1)", "Rather\nUncertain (2)", "Rather\nCertain (3)", "Very\nCertain (4)")
+
+p_nutrition <- ggdensity(
+  nutrition_data %>% filter(!is.na(nutrition_se)),
+  x = "nutrition_se", fill = colors_nutrition_se, color = colors_nutrition_se, alpha = 0.4
+) +
+  geom_vline(xintercept = q33_nutr, linetype = "dashed", color = colors_nutrition_se, linewidth = 0.6) +
+  geom_vline(xintercept = q67_nutr, linetype = "dashed", color = colors_nutrition_se, linewidth = 0.6) +
+  coord_cartesian(xlim = c(1, 4)) +
+  scale_x_continuous(breaks = 1:4, labels = se_labels) +
+  labs(
+    title = "Nutrition Self-Efficacy",
+    subtitle = "33rd and 67th percentiles",
+    x = "Composite Score", y = "Density"
+  ) +
+  theme_minimal() + theme(legend.position = "none")
+
+p_exercise <- ggdensity(
+  exercise_data %>% filter(!is.na(exercise_se)),
+  x = "exercise_se", fill = colors_exercise_se, color = colors_exercise_se, alpha = 0.4
+) +
+  geom_vline(xintercept = q33_exer, linetype = "dashed", color = colors_exercise_se, linewidth = 0.6) +
+  geom_vline(xintercept = q67_exer, linetype = "dashed", color = colors_exercise_se, linewidth = 0.6) +
+  coord_cartesian(xlim = c(1, 4)) +
+  scale_x_continuous(breaks = 1:4, labels = se_labels) +
+  labs(
+    title = "Physical Exercise Self-Efficacy",
+    subtitle = "33rd and 67th percentiles",
+    x = "Composite Score", y = "Density"
+  ) +
+  theme_minimal() + theme(legend.position = "none")
+
+p_nutrition + p_exercise +
+  plot_annotation(
+    title = "All Participants: Health Self-Efficacy (Schwarzer & Renner, 2000)",
+    subtitle = "Nutrition and Exercise subscales | Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## Health Information Avoidance --- General
+
+### Constructs {.unnumbered}
+
+The **Health Information Avoidance Scale --- General** (based on [Ho et al., 2021](https://doi.org/10.1287/mnsc.2019.3554)) measures your tendency to seek or avoid potentially threatening information. Information avoidance reflects situations where people choose *not* to obtain available information, even when it is free and potentially useful.
+
+### Measures {.unnumbered}
+
+The scale presents 7 realistic scenarios and asks whether you would want to know potentially threatening information. Each item is rated on a 4-point scale: 1 = *Definitely Don't Want to Know*, 2 = *Probably Don't Want to Know*, 3 = *Probably Want to Know*, 4 = *Definitely Want to Know*. Higher scores indicate *less* avoidance (i.e., more information-seeking).
+
+**Example item:**
+
+- *"You bought a phone at what seemed like a reasonable, though not particularly low, price. A month has passed... Do you want to know the price you could have bought it for?"*
+
+```{r}
+#| label: avoidance-gen-compute
+
+avoid_gen_data <- alldata %>%
+  select(CLASS, PASSWORD, all_of(paste0("AVOIDANCEGEN", 1:7))) %>%
+  mutate(across(starts_with("AVOIDANCEGEN"), ~ as.numeric(.)))
+
+avoid_gen_data <- avoid_gen_data %>%
+  mutate(
+    avoidance_general = rowMeans(
+      pick( starts_with("AVOIDANCEGEN")), na.rm = TRUE
+    )
+  )
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: avoidance-gen-password
+
+avoid_gen_password <- avoid_gen_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  select(PASSWORD, avoidance_general) %>%
+  arrange(PASSWORD)
+
+avoid_gen_table <- avoid_gen_password %>%
+  transmute(
+    Password = PASSWORD,
+    `Info Seeking` = round(avoidance_general, 2),
+    `Score(%)` = add_percentile(avoidance_general)
+  )
+
+kbl(avoid_gen_table,
+    escape = FALSE,
+    col.names = c("Password",
+                   paste0("<span style='color:", colors_avoid_gen, "'>Info Seeking</span>"),
+                   paste0("<span style='color:", colors_avoid_gen, "'>Score(%)</span>")),
+    caption = "Health Information Avoidance (General): Your Composite Score") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: avoidance-gen-density
+#| fig-cap: "Health Information Avoidance (General): Higher scores = more information-seeking, lower scores = more avoidance. Dashed lines = 33rd and 67th percentiles."
+#| fig-width: 8
+#| fig-height: 5
+
+q33_avoid_gen <- quantile(avoid_gen_data$avoidance_general, probs = 1/3, na.rm = TRUE)
+q67_avoid_gen <- quantile(avoid_gen_data$avoidance_general, probs = 2/3, na.rm = TRUE)
+
+p_avoid_gen <- ggdensity(
+  avoid_gen_data %>% filter(!is.na(avoidance_general)),
+  x = "avoidance_general", fill = colors_avoid_gen, color = colors_avoid_gen, alpha = 0.4
+) +
+  geom_vline(xintercept = q33_avoid_gen, linetype = "dashed", color = colors_avoid_gen, linewidth = 0.6) +
+  geom_vline(xintercept = q67_avoid_gen, linetype = "dashed", color = colors_avoid_gen, linewidth = 0.6) +
+  coord_cartesian(xlim = c(1, 4)) +
+  scale_x_continuous(breaks = 1:4, labels = c("Definitely Don't\nWant to Know (1)", "Probably Don't\nWant to Know (2)", "Probably Want\nto Know (3)", "Definitely Want\nto Know (4)")) +
+  labs(
+    title = "All Participants: Health Information Avoidance (General)",
+    subtitle = "33rd and 67th percentiles",
+    x = "Composite Score", y = "Density"
+  ) +
+  theme_minimal() + theme(legend.position = "none")
+
+p_avoid_gen
+```
+
+#### Item-Level Analysis {.unnumbered}
+
+Each of the 7 scenarios targets a different type of potentially threatening information. The bar chart below shows the average response to each item so you can see which types of information people are most and least willing to learn about.
+
+```{r}
+#| label: avoidance-gen-items
+#| fig-cap: "Health Information Avoidance (General): Average willingness to know for each scenario. Higher values = more willing to seek information."
+#| fig-width: 10
+#| fig-height: 6
+
+# Create descriptive item names based on the scenario content
+avoidance_item_labels <- c(
+  "Phone Price (Regret)",
+  "Attractiveness / Alzheimer's Risk",
+  "Glyphosate Exposure (Cancer)",
+  "Online Distraction (Time Wasted)",
+  "AI Job Risk (Career Threat)",
+  "Nutrition Score (Diet Quality)",
+  "Social Media & Brain Health"
+)
+
+# Item-level data
+avoid_gen_items <- alldata %>%
+  select(all_of(paste0("AVOIDANCEGEN", 1:7))) %>%
+  mutate(across(everything(), ~ as.numeric(.)))
+
+# Calculate mean for each item
+item_means <- avoid_gen_items %>%
+  summarise(across(everything(), ~ mean(., na.rm = TRUE))) %>%
+  pivot_longer(everything(), names_to = "item", values_to = "avg") %>%
+  mutate(
+    item_num = as.numeric(str_extract(item, "\\d+$")),
+    label = avoidance_item_labels[item_num],
+    label = factor(label, levels = rev(avoidance_item_labels))
+  )
+
+# Bar plot — horizontal bars with single-line labels
+p_avoid_bar <- ggplot(item_means, aes(x = avg, y = label)) +
+  geom_col(fill = colors_avoid_gen, alpha = 0.7, width = 0.6) +
+  geom_text(aes(label = round(avg, 2)), hjust = -0.2, size = 3.5) +
+  geom_vline(xintercept = 2.5, linetype = "dashed", color = "gray50", linewidth = 0.5) +
+  scale_x_continuous(
+    breaks = 1:4,
+    labels = c("Definitely Don't\nWant to Know (1)", "Probably Don't\nWant to Know (2)",
+               "Probably Want\nto Know (3)", "Definitely Want\nto Know (4)"),
+    limits = c(0, 4.5),
+    expand = c(0, 0)
+  ) +
+  labs(
+    title = "Average Willingness to Know by Scenario",
+    subtitle = "Higher scores = more information-seeking",
+    x = "Average Response", y = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "none",
+    axis.text.y = element_text(size = 9),
+    axis.text.x = element_text(size = 7),
+    plot.margin = margin(5, 15, 5, 5)
+  )
+
+p_avoid_bar
+```
+
+---
+
+## Health Information Avoidance --- Depression
+
+### Constructs {.unnumbered}
+
+The **Health Information Avoidance Scale --- Depression** measures your tendency to avoid or seek information about a potential depression diagnosis. This scale assesses whether you would prefer to know or not know about your risk for major depression, reflecting the psychological tension between the desire for useful health information and the discomfort of receiving threatening news.
+
+### Measures {.unnumbered}
+
+The scale contains 8 items rated on a 7-point scale: 1 = *Strongly Disagree*, 2 = *Disagree*, 3 = *Slightly Disagree*, 4 = *Neutral*, 5 = *Slightly Agree*, 6 = *Agree*, 7 = *Strongly Agree*. Items 3, 5, 7, and 8 are reverse-scored so that higher composite scores indicate *more* avoidance.
+
+**Example item:**
+
+- *"I would rather not know my risk for major depression."*
+
+```{r}
+#| label: avoidance-dep-compute
+
+avoid_dep_data <- alldata %>%
+  select(CLASS, PASSWORD, all_of(paste0("AVOIDANCEDEPRESSION_", 1:8))) %>%
+  mutate(across(starts_with("AVOIDANCEDEPRESSION_"), ~ as.numeric(.)))
+
+# Step 1: Reverse-score items 3, 5, 7, 8 (these are information-seeking items)
+avoid_dep_data <- avoid_dep_data %>%
+  mutate(
+    AVOIDANCEDEPRESSION_3_r = 8 - AVOIDANCEDEPRESSION_3,
+    AVOIDANCEDEPRESSION_5_r = 8 - AVOIDANCEDEPRESSION_5,
+    AVOIDANCEDEPRESSION_7_r = 8 - AVOIDANCEDEPRESSION_7,
+    AVOIDANCEDEPRESSION_8_r = 8 - AVOIDANCEDEPRESSION_8
+  )
+
+# Step 2: Compute composite
+avoid_dep_data <- avoid_dep_data %>%
+  mutate(
+    avoidance_depression = rowMeans(
+      pick(AVOIDANCEDEPRESSION_1, AVOIDANCEDEPRESSION_2,
+           AVOIDANCEDEPRESSION_3_r, AVOIDANCEDEPRESSION_4,
+           AVOIDANCEDEPRESSION_5_r, AVOIDANCEDEPRESSION_6,
+           AVOIDANCEDEPRESSION_7_r, AVOIDANCEDEPRESSION_8_r),
+      na.rm = TRUE
+    )
+  )
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: avoidance-dep-password
+
+avoid_dep_password <- avoid_dep_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  select(PASSWORD, avoidance_depression) %>%
+  arrange(PASSWORD)
+
+avoid_dep_table <- avoid_dep_password %>%
+  transmute(
+    Password = PASSWORD,
+    `Depression Avoidance` = round(avoidance_depression, 2),
+    `Score(%)` = add_percentile(avoidance_depression)
+  )
+
+kbl(avoid_dep_table,
+    escape = FALSE,
+    col.names = c("Password",
+                   paste0("<span style='color:", colors_avoid_dep, "'>Depression Avoidance</span>"),
+                   paste0("<span style='color:", colors_avoid_dep, "'>Score(%)</span>")),
+    caption = "Health Information Avoidance (Depression): Your Composite Score") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: avoidance-dep-density
+#| fig-cap: "Health Information Avoidance (Depression): Higher scores = more avoidance of depression-related information. Dashed lines = 33rd and 67th percentiles."
+#| fig-width: 8
+#| fig-height: 5
+
+q33_avoid_dep <- quantile(avoid_dep_data$avoidance_depression, probs = 1/3, na.rm = TRUE)
+q67_avoid_dep <- quantile(avoid_dep_data$avoidance_depression, probs = 2/3, na.rm = TRUE)
+
+p_avoid_dep <- ggdensity(
+  avoid_dep_data %>% filter(!is.na(avoidance_depression)),
+  x = "avoidance_depression", fill = colors_avoid_dep, color = colors_avoid_dep, alpha = 0.4
+) +
+  geom_vline(xintercept = q33_avoid_dep, linetype = "dashed", color = colors_avoid_dep, linewidth = 0.6) +
+  geom_vline(xintercept = q67_avoid_dep, linetype = "dashed", color = colors_avoid_dep, linewidth = 0.6) +
+  coord_cartesian(xlim = c(1, 7)) +
+  scale_x_continuous(breaks = 1:7, labels = c("Strongly\nDisagree (1)", "Disagree\n(2)", "Slightly\nDisagree (3)", "Neutral\n(4)", "Slightly\nAgree (5)", "Agree\n(6)", "Strongly\nAgree (7)")) +
+  labs(
+    title = "All Participants: Depression Information Avoidance",
+    subtitle = "33rd and 67th percentiles",
+    x = "Composite Score (higher = more avoidance)", y = "Density"
+  ) +
+  theme_minimal() + theme(legend.position = "none")
+
+p_avoid_dep
+```
+
+---
+
+## Chapter Summary: All Psychological Beliefs Measures {.unnumbered}
+
+```{r}
+#| label: ch3-patchwork-summary
+#| fig-cap: "Chapter Summary: Eight subscales across five psychological beliefs measures."
+#| fig-width: 14
+#| fig-height: 12
+
+# Rebuild small versions for patchwork
+p_fw_sm <- p_fw + labs(title = "FAD-Plus:\nFree Will") + theme(plot.title = element_text(size = 9))
+p_sd_sm <- p_sd + labs(title = "FAD-Plus:\nSci. Determinism") + theme(plot.title = element_text(size = 9))
+p_fd_sm <- p_fd + labs(title = "FAD-Plus:\nFatalistic Det.") + theme(plot.title = element_text(size = 9))
+p_up_sm <- p_up + labs(title = "FAD-Plus:\nUnpredictability") + theme(plot.title = element_text(size = 9))
+p_nutr_sm <- p_nutrition + labs(title = "Nutrition\nSelf-Efficacy") + theme(plot.title = element_text(size = 9))
+p_exer_sm <- p_exercise + labs(title = "Exercise\nSelf-Efficacy") + theme(plot.title = element_text(size = 9))
+p_ag_sm <- p_avoid_gen + labs(title = "Info Avoidance:\nGeneral") + theme(plot.title = element_text(size = 9))
+p_ad_sm <- p_avoid_dep + labs(title = "Info Avoidance:\nDepression") + theme(plot.title = element_text(size = 9))
+
+(p_fw_sm + p_sd_sm + p_fd_sm + p_up_sm) /
+(p_nutr_sm + p_exer_sm + p_ag_sm + p_ad_sm) +
+  plot_annotation(
+    title = "Chapter Summary: Psychological Beliefs",
+    subtitle = "33rd and 67th percentiles"
+  )
+```
+
+---
+
+## References {.unnumbered}
+
+Ho, E. H., Hagmann, D., & Loewenstein, G. (2021). Measuring information preferences. *Management Science*, *67*(1), 126--145. <https://doi.org/10.1287/mnsc.2019.3554>
+
+Paulhus, D. L., & Carey, J. M. (2011). The FAD--Plus: Measuring lay beliefs regarding free will and related constructs. *Journal of Personality Assessment*, *93*(1), 96--104. <https://doi.org/10.1080/00223891.2011.536216>
+
+Schwarzer, R., & Renner, B. (2000). Social-cognitive predictors of health behavior: Action self-efficacy and coping self-efficacy. *Health Psychology*, *19*(5), 487--495. <https://doi.org/10.1037/0278-6133.19.5.487>

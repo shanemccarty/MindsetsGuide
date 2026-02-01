@@ -1,0 +1,547 @@
+# Regulatory Focus {#sec-regulatory-focus}
+
+```{r}
+#| label: setup-ch1
+#| include: false
+
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+library(patchwork)
+library(kableExtra)
+
+# ---- Percentile Helper ----
+add_percentile <- function(x) {
+  pct <- round(percent_rank(x) * 100)
+  label <- case_when(
+    pct < 33.33 ~ "low",
+    pct < 66.67 ~ "mid",
+    TRUE ~ "high"
+  )
+  paste0(pct, "% (", label, ")")
+}
+
+# ---- Color Palette for Chapter 1 ----
+# Promotion / Prevention colors (shared across all 3 measures)
+colors_promo   <- "#8297ce"   # soft blue — promotion
+colors_prev    <- "#453a98"   # deep indigo — prevention
+
+# Class comparison colors
+colors_ph322   <- "#F4C9A8"   # warm peach
+colors_anth206 <- "#C5DECA"   # sage green
+
+# ---- Load & Prepare Data ----
+alldata <- read_csv("data/survey_data.csv", show_col_types = FALSE)
+
+# Drop header rows (Qualtrics exports rows 2-3 as sub-headers)
+alldata <- alldata %>%
+  filter(
+    !is.na(PASSWORD),
+    PASSWORD != "PASSWORD",
+    !grepl("ImportId", PASSWORD, fixed = TRUE),
+    !grepl("ImportId", YEAR, fixed = TRUE),
+    PASSWORD != "What is the current year?",
+    YEAR != "What is the current year?"
+  )
+
+# Remove duplicate olive0925 (keep first occurrence, drop second)
+olive_rows <- which(alldata$PASSWORD == "olive0925")
+if (length(olive_rows) > 1) {
+  alldata <- alldata[-olive_rows[-1], ]
+}
+
+# Clean passwords: replace identifying entries
+alldata <- alldata %>%
+  mutate(
+    PASSWORD = case_when(
+      PASSWORD == "Powerisgay2!" ~ "Power2",
+      PASSWORD == "K1lc0yne$402" ~ "Health$402",
+      PASSWORD == "Charlie1203" ~ "Health1203",
+      PASSWORD == "aaron4103" ~ "health4103",
+      PASSWORD == "brandonc1248" ~ "health1248",
+      PASSWORD == "joyas1244" ~ "health1244",
+      PASSWORD == "olive0925" ~ "health0925",
+      TRUE ~ PASSWORD
+    )
+  )
+
+# Recode CLASS
+alldata <- alldata %>%
+  mutate(
+    CLASS = factor(
+      CLASS,
+      levels = c("1", "2", "3"),
+      labels = c("PH322", "ANTH206", "Peer Mentor / TA")
+    )
+  )
+```
+
+This chapter examines three measures of **regulatory focus** --- motivational orientations that shape whether you focus on pursuing positive outcomes (promotion) or avoiding negative outcomes (prevention). Understanding your regulatory focus orientation is foundational to health communication because it directly influences how you frame health messages and how those messages are received by different audiences.
+
+::: {.callout-important}
+## Psychographics
+This week will explore how promotion and prevention mindsets influence conceptions of health and community, preferences for mental health strategies, and promotion vs. prevention goals.
+:::
+
+::: {.callout-tip}
+## Case Study
+Using promotion and prevention-focused framing, your team will evaluate the "hidden messages" in previous health communication campaigns.
+:::
+
+::: {.callout-warning}
+## Health Campaign
+Using regulatory focus theory and message framing techniques, your team will design health messages related to your topic that resonate with both promotion-focused and prevention-focused audiences.
+:::
+
+---
+
+## Regulatory Focus Questionnaire
+
+### Constructs {.unnumbered}
+
+The **Regulatory Focus Questionnaire** (RFQ; [Higgins et al., 2001](https://doi.org/10.1002/ejsp.29)) measures whether your general behavioral style is driven by [*promotion*]{style="color: #8297ce;"} or [*prevention*]{style="color: #453a98;"}.
+
+- [**Promotion Focus**]{style="color: #8297ce;"}: An eagerness-based orientation toward achieving gains, pursuing ideals, and accomplishing aspirations
+- [**Prevention Focus**]{style="color: #453a98;"}: A vigilance-based orientation toward avoiding losses, fulfilling duties, and meeting obligations
+
+### Measures {.unnumbered}
+
+The RFQ contains 11 items (6 promotion, 5 prevention) rated on a 5-point scale: 1 = *Never or Seldom*, 2 = *Rarely*, 3 = *Sometimes*, 4 = *Often*, 5 = *Very Often*. Higher scores indicate a stronger orientation toward that focus.
+
+**Example items:**
+
+- [Promotion]{style="color: #8297ce;"}: *"How often have you accomplished things that got you 'psyched' to work even harder?"*
+- [Prevention]{style="color: #453a98;"}: *"Compared to most people, are you typically unable to get what you want out of life?"* (reverse-scored)
+
+```{r}
+#| label: rfq-compute
+
+# ---- Select & Compute RFQ ----
+rfq_data <- alldata %>%
+  select(CLASS, PASSWORD, matches("^PH322-W3_\\d+$")) %>%
+  mutate(across(matches("^PH322-W3_"), ~ as.numeric(.)))
+
+# RFQ Promotion: items 1(R), 2, 3, 4(R), 5, 6(R)
+# RFQ Prevention: items 7(R), 8(R), 9, 10(R), 11
+# Step 1: Reverse-score items
+rfq_data <- rfq_data %>%
+  mutate(
+    `PH322-W3_1_r`  = 6 - `PH322-W3_1`,
+    `PH322-W3_4_r`  = 6 - `PH322-W3_4`,
+    `PH322-W3_6_r`  = 6 - `PH322-W3_6`,
+    `PH322-W3_7_r`  = 6 - `PH322-W3_7`,
+    `PH322-W3_8_r`  = 6 - `PH322-W3_8`,
+    `PH322-W3_10_r` = 6 - `PH322-W3_10`
+  )
+
+# Step 2: Compute composites
+rfq_data <- rfq_data %>%
+  mutate(
+    rfq_promotion = rowMeans(
+      pick(`PH322-W3_1_r`, `PH322-W3_2`, `PH322-W3_3`,
+           `PH322-W3_4_r`, `PH322-W3_5`, `PH322-W3_6_r`),
+      na.rm = TRUE
+    ),
+    rfq_prevention = rowMeans(
+      pick(`PH322-W3_7_r`, `PH322-W3_8_r`, `PH322-W3_9`,
+           `PH322-W3_10_r`, `PH322-W3_11`),
+      na.rm = TRUE
+    )
+  )
+```
+
+### Your Scores {.unnumbered}
+
+Find your password below to see your Regulatory Focus Questionnaire scores.
+
+::: {.callout-note}
+## A Note about Passwords
+A few students provided identifying passwords. Those passwords were changed to use "health" and retained the original numbers in your password. You should be able to identify your new password now. If you cannot find your password, contact Dr. Shane McCarty.
+:::
+
+```{r}
+#| label: rfq-password-table
+
+rfq_password <- rfq_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  select(PASSWORD, rfq_promotion, rfq_prevention) %>%
+  mutate(
+    rfq_promotion_pct = add_percentile(rfq_promotion),
+    rfq_prevention_pct = add_percentile(rfq_prevention)
+  ) %>%
+  arrange(PASSWORD)
+
+rfq_password %>%
+  select(PASSWORD, rfq_promotion, rfq_promotion_pct,
+         rfq_prevention, rfq_prevention_pct) %>%
+  kbl(
+    digits = 2,
+    escape = FALSE,
+    col.names = c("Password",
+                   paste0("<span style='color:", colors_promo, "'>Promotion Focus</span>"),
+                   paste0("<span style='color:", colors_promo, "'>Promotion Focus (%)</span>"),
+                   paste0("<span style='color:", colors_prev, "'>Prevention Focus</span>"),
+                   paste0("<span style='color:", colors_prev, "'>Prevention Focus (%)</span>")),
+    caption = "Regulatory Focus Questionnaire: Your Composite Scores"
+  ) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    full_width = FALSE
+  )
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: rfq-density
+#| fig-cap: "Regulatory Focus Questionnaire: Promotion vs. Prevention Focus across all participants. Dashed lines indicate the 33rd and 67th percentiles."
+#| fig-width: 10
+#| fig-height: 5
+
+rfq_long <- rfq_data %>%
+  select(CLASS, rfq_promotion, rfq_prevention) %>%
+  pivot_longer(
+    cols = c(rfq_promotion, rfq_prevention),
+    names_to = "focus_type",
+    values_to = "score"
+  ) %>%
+  mutate(
+    focus_type = recode(
+      focus_type,
+      rfq_promotion = "Promotion Focus",
+      rfq_prevention = "Prevention Focus"
+    )
+  )
+
+make_rfq_plot <- function(d, focus_label, fill_color) {
+  q33 <- quantile(d$score, probs = 1/3, na.rm = TRUE)
+  q67 <- quantile(d$score, probs = 2/3, na.rm = TRUE)
+
+  ggdensity(d, x = "score", fill = "focus_type", color = "focus_type", alpha = 0.4) +
+    geom_vline(xintercept = q33, linetype = "dashed", color = fill_color, linewidth = 0.6) +
+    geom_vline(xintercept = q67, linetype = "dashed", color = fill_color, linewidth = 0.6) +
+    coord_cartesian(xlim = c(1, 5)) +
+    scale_x_continuous(breaks = 1:5, labels = c("Never or\nSeldom (1)", "Rarely\n(2)", "Sometimes\n(3)", "Often\n(4)", "Very\nOften (5)")) +
+    scale_fill_manual(values = setNames(fill_color, focus_label)) +
+    scale_color_manual(values = setNames(fill_color, focus_label)) +
+    labs(title = focus_label, x = "Composite Score", y = "Density") +
+    theme_minimal() + theme(legend.position = "none")
+}
+
+# Promotion plot
+p_rfq_promo <- make_rfq_plot(
+  rfq_long %>% filter(focus_type == "Promotion Focus"),
+  "Promotion Focus", colors_promo
+)
+
+# Prevention plot
+p_rfq_prev <- make_rfq_plot(
+  rfq_long %>% filter(focus_type == "Prevention Focus"),
+  "Prevention Focus", colors_prev
+)
+
+p_rfq_promo + p_rfq_prev +
+  plot_annotation(
+    title = "All Participants: Regulatory Focus Questionnaire (Higgins et al., 2001)",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## Health Regulatory Focus Scale
+
+### Constructs {.unnumbered}
+
+The **Health Regulatory Focus Scale** (HRFS; [Ferrer et al., 2017](https://doi.org/10.1016/j.socscimed.2017.10.029)) measures whether you approach your own health with a [health promotion focus]{style="color: #8297ce;"} or [health prevention focus]{style="color: #453a98;"} orientation.
+
+- [**Health Promotion Focus**]{style="color: #8297ce;"}: Striving toward ideal health, feeling accomplished by healthy behaviors, and admiring healthy people
+- [**Health Prevention Focus**]{style="color: #453a98;"}: Worrying about illness, feeling anxious about health obligations, and fearing future health problems
+
+### Measures {.unnumbered}
+
+The HRFS contains 12 items (6 promotion, 6 prevention) rated on a 6-point scale: 1 = *Strongly Disagree*, 2 = *Disagree*, 3 = *Slightly Disagree*, 4 = *Slightly Agree*, 5 = *Agree*, 6 = *Strongly Agree*. Higher scores indicate a stronger health-specific focus.
+
+**Example items:**
+
+- [Health Promotion]{style="color: #8297ce;"}: *"I frequently imagine how I can achieve a state of 'ideal health.'"*
+- [Health Prevention]{style="color: #453a98;"}: *"I often worry that I am not doing the best I can to improve my health."*
+
+```{r}
+#| label: hrfs-compute
+
+hrfs_data <- alldata %>%
+  select(CLASS, PASSWORD, all_of(paste0("REGULATORYFOCUS_", 1:12))) %>%
+  mutate(across(starts_with("REGULATORYFOCUS_"), ~ as.numeric(.)))
+
+hrfs_data <- hrfs_data %>%
+  mutate(
+    health_promotion_focus = rowMeans(
+      pick(all_of(paste0("REGULATORYFOCUS_", 1:6))), na.rm = TRUE
+    ),
+    health_prevention_focus = rowMeans(
+      pick(all_of(paste0("REGULATORYFOCUS_", 7:12))), na.rm = TRUE
+    )
+  )
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: hrfs-password-table
+
+hrfs_password <- hrfs_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  select(PASSWORD, health_promotion_focus, health_prevention_focus) %>%
+  mutate(
+    health_promotion_pct = add_percentile(health_promotion_focus),
+    health_prevention_pct = add_percentile(health_prevention_focus)
+  ) %>%
+  arrange(PASSWORD)
+
+hrfs_password %>%
+  select(PASSWORD, health_promotion_focus, health_promotion_pct,
+         health_prevention_focus, health_prevention_pct) %>%
+  kbl(
+    digits = 2,
+    escape = FALSE,
+    col.names = c("Password",
+                   paste0("<span style='color:", colors_promo, "'>Health Promotion Focus</span>"),
+                   paste0("<span style='color:", colors_promo, "'>Health Promotion Focus (%)</span>"),
+                   paste0("<span style='color:", colors_prev, "'>Health Prevention Focus</span>"),
+                   paste0("<span style='color:", colors_prev, "'>Health Prevention Focus (%)</span>")),
+    caption = "Health Regulatory Focus Scale: Your Composite Scores"
+  ) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    full_width = FALSE
+  )
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: hrfs-density
+#| fig-cap: "Health Regulatory Focus Scale: Promotion vs. Prevention focus in health goals. Dashed lines indicate the 33rd and 67th percentiles."
+#| fig-width: 10
+#| fig-height: 5
+
+hrfs_long <- hrfs_data %>%
+  select(CLASS, health_promotion_focus, health_prevention_focus) %>%
+  pivot_longer(
+    cols = c(health_promotion_focus, health_prevention_focus),
+    names_to = "focus_type",
+    values_to = "score"
+  ) %>%
+  mutate(
+    focus_type = recode(
+      focus_type,
+      health_promotion_focus = "Health Promotion Focus",
+      health_prevention_focus = "Health Prevention Focus"
+    )
+  )
+
+make_hrfs_plot <- function(d, focus_label, fill_color) {
+  q33 <- quantile(d$score, probs = 1/3, na.rm = TRUE)
+  q67 <- quantile(d$score, probs = 2/3, na.rm = TRUE)
+
+  ggdensity(d, x = "score", fill = "focus_type", color = "focus_type", alpha = 0.4) +
+    geom_vline(xintercept = q33, linetype = "dashed", color = fill_color, linewidth = 0.6) +
+    geom_vline(xintercept = q67, linetype = "dashed", color = fill_color, linewidth = 0.6) +
+    coord_cartesian(xlim = c(1, 6)) +
+    scale_x_continuous(breaks = 1:6, labels = c("Strongly\nDisagree (1)", "Disagree\n(2)", "Slightly\nDisagree (3)", "Slightly\nAgree (4)", "Agree\n(5)", "Strongly\nAgree (6)")) +
+    scale_fill_manual(values = setNames(fill_color, focus_label)) +
+    scale_color_manual(values = setNames(fill_color, focus_label)) +
+    labs(title = focus_label, x = "Composite Score", y = "Density") +
+    theme_minimal() + theme(legend.position = "none", axis.text.x = element_text(size = 7))
+}
+
+# Promotion plot
+p_hrfs_promo <- make_hrfs_plot(
+  hrfs_long %>% filter(focus_type == "Health Promotion Focus"),
+  "Health Promotion Focus", colors_promo
+)
+
+# Prevention plot
+p_hrfs_prev <- make_hrfs_plot(
+  hrfs_long %>% filter(focus_type == "Health Prevention Focus"),
+  "Health Prevention Focus", colors_prev
+)
+
+p_hrfs_promo + p_hrfs_prev +
+  plot_annotation(
+    title = "All Participants: Health Regulatory Focus Scale (Ferrer et al., 2017)",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## Prosocial Regulatory Focus Scale
+
+### Constructs {.unnumbered}
+
+The **Prosocial Regulatory Focus Scale** (McCarty et al., 2026) measures whether your prosocial motivation is oriented toward [*promoting care*]{style="color: #8297ce;"} for others or [*preventing harm*]{style="color: #453a98;"} to others.
+
+- [**Promoting Care**]{style="color: #8297ce;"}: Focusing on making positive impacts, uplifting others, and helping people achieve well-being
+- [**Preventing Harm**]{style="color: #453a98;"}: Focusing on stopping harmful actions, taking preventive action, and protecting people from threats
+
+### Measures {.unnumbered}
+
+The scale contains 10 items (5 promoting care, 5 preventing harm) rated on a 6-point scale: 1 = *Strongly Disagree*, 2 = *Disagree*, 3 = *Slightly Disagree*, 4 = *Slightly Agree*, 5 = *Agree*, 6 = *Strongly Agree*. Higher scores indicate a stronger prosocial orientation in that direction.
+
+**Example items:**
+
+- [Promoting Care]{style="color: #8297ce;"}: *"I typically focus on making a positive impact on people."*
+- [Preventing Harm]{style="color: #453a98;"}: *"I am generally good at stopping harmful actions from happening to people."*
+
+```{r}
+#| label: prosocial-compute
+
+prosocial_data <- alldata %>%
+  select(CLASS, PASSWORD, all_of(paste0("PROSOCIAL_", 1:10))) %>%
+  mutate(across(starts_with("PROSOCIAL_"), ~ as.numeric(.)))
+
+prosocial_data <- prosocial_data %>%
+  mutate(
+    promoting_care = rowMeans(
+      pick(all_of(paste0("PROSOCIAL_", 1:5))), na.rm = TRUE
+    ),
+    preventing_harm = rowMeans(
+      pick(all_of(paste0("PROSOCIAL_", 6:10))), na.rm = TRUE
+    )
+  )
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: prosocial-password-table
+
+prosocial_password <- prosocial_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  select(PASSWORD, promoting_care, preventing_harm) %>%
+  mutate(
+    promoting_care_pct = add_percentile(promoting_care),
+    preventing_harm_pct = add_percentile(preventing_harm)
+  ) %>%
+  arrange(PASSWORD)
+
+prosocial_password %>%
+  select(PASSWORD, promoting_care, promoting_care_pct,
+         preventing_harm, preventing_harm_pct) %>%
+  kbl(
+    digits = 2,
+    escape = FALSE,
+    col.names = c("Password",
+                   paste0("<span style='color:", colors_promo, "'>Promoting Care</span>"),
+                   paste0("<span style='color:", colors_promo, "'>Promoting Care (%)</span>"),
+                   paste0("<span style='color:", colors_prev, "'>Preventing Harm</span>"),
+                   paste0("<span style='color:", colors_prev, "'>Preventing Harm (%)</span>")),
+    caption = "Prosocial Regulatory Focus Scale: Your Composite Scores"
+  ) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    full_width = FALSE
+  )
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: prosocial-density
+#| fig-cap: "Prosocial Regulatory Focus Scale: Promoting Care vs. Preventing Harm orientations. Dashed lines indicate the 33rd and 67th percentiles."
+#| fig-width: 10
+#| fig-height: 5
+
+prosocial_long <- prosocial_data %>%
+  select(CLASS, promoting_care, preventing_harm) %>%
+  pivot_longer(
+    cols = c(promoting_care, preventing_harm),
+    names_to = "focus_type",
+    values_to = "score"
+  ) %>%
+  mutate(
+    focus_type = recode(
+      focus_type,
+      promoting_care = "Promoting Care",
+      preventing_harm = "Preventing Harm"
+    )
+  )
+
+make_prosocial_plot <- function(d, focus_label, fill_color) {
+  q33 <- quantile(d$score, probs = 1/3, na.rm = TRUE)
+  q67 <- quantile(d$score, probs = 2/3, na.rm = TRUE)
+
+  ggdensity(d, x = "score", fill = "focus_type", color = "focus_type", alpha = 0.4) +
+    geom_vline(xintercept = q33, linetype = "dashed", color = fill_color, linewidth = 0.6) +
+    geom_vline(xintercept = q67, linetype = "dashed", color = fill_color, linewidth = 0.6) +
+    coord_cartesian(xlim = c(1, 6)) +
+    scale_x_continuous(breaks = 1:6, labels = c("Strongly\nDisagree (1)", "Disagree\n(2)", "Slightly\nDisagree (3)", "Slightly\nAgree (4)", "Agree\n(5)", "Strongly\nAgree (6)")) +
+    scale_fill_manual(values = setNames(fill_color, focus_label)) +
+    scale_color_manual(values = setNames(fill_color, focus_label)) +
+    labs(title = focus_label, x = "Composite Score", y = "Density") +
+    theme_minimal() + theme(legend.position = "none", axis.text.x = element_text(size = 7))
+}
+
+# Promoting Care plot
+p_pro_care <- make_prosocial_plot(
+  prosocial_long %>% filter(focus_type == "Promoting Care"),
+  "Promoting Care", colors_promo
+)
+
+# Preventing Harm plot
+p_pro_harm <- make_prosocial_plot(
+  prosocial_long %>% filter(focus_type == "Preventing Harm"),
+  "Preventing Harm", colors_prev
+)
+
+p_pro_care + p_pro_harm +
+  plot_annotation(
+    title = "All Participants: Prosocial Regulatory Focus Scale (McCarty et al., 2026)",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## Chapter Summary: All Regulatory Focus Measures {.unnumbered}
+
+```{r}
+#| label: ch1-patchwork-summary
+#| fig-cap: "Chapter 1 Summary: All six motivational mindset subscales across the three regulatory focus measures."
+#| fig-width: 12
+#| fig-height: 10
+
+# Rebuild all 6 mini-plots for a combined patchwork
+p_rfq_promo_sm <- p_rfq_promo + labs(title = "RFQ:\nPromotion Focus") +
+  theme(plot.title = element_text(size = 10))
+p_rfq_prev_sm <- p_rfq_prev + labs(title = "RFQ:\nPrevention Focus") +
+  theme(plot.title = element_text(size = 10))
+p_hrfs_promo_sm <- p_hrfs_promo + labs(title = "HRFS:\nHealth Promotion") +
+  theme(plot.title = element_text(size = 10))
+p_hrfs_prev_sm <- p_hrfs_prev + labs(title = "HRFS:\nHealth Prevention") +
+  theme(plot.title = element_text(size = 10))
+p_pro_care_sm <- p_pro_care + labs(title = "Prosocial:\nPromoting Care") +
+  theme(plot.title = element_text(size = 10))
+p_pro_harm_sm <- p_pro_harm + labs(title = "Prosocial:\nPreventing Harm") +
+  theme(plot.title = element_text(size = 10))
+
+(p_rfq_promo_sm + p_rfq_prev_sm) /
+(p_hrfs_promo_sm + p_hrfs_prev_sm) /
+(p_pro_care_sm + p_pro_harm_sm) +
+  plot_annotation(
+    title = "Chapter Summary: Regulatory Focus",
+    subtitle = "Three measures of promotion vs. prevention orientation -- dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## References {.unnumbered}
+
+Ferrer, R. A., Lipkus, I. M., Cerully, J. L., McBride, C. M., Shepperd, J. A., & Klein, W. M. (2017). Developing a scale to assess health regulatory focus. *Social Science & Medicine*, *195*, 50--60. <https://doi.org/10.1016/j.socscimed.2017.10.029>
+
+Higgins, E. T., Friedman, R. S., Harlow, R. E., Idson, L. C., Ayduk, O. N., & Taylor, A. (2001). Achievement orientations from subjective histories of success: Promotion pride versus prevention pride. *European Journal of Social Psychology*, *31*(1), 3--23. <https://doi.org/10.1002/ejsp.29>
+
+McCarty, S., et al. (2026). Prosocial regulatory focus theory: Prosocial motivational orientation of promotion and prevention. *Manuscript in preparation*.

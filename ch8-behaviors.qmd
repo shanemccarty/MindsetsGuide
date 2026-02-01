@@ -1,0 +1,586 @@
+# Health Behaviors {#sec-social-media}
+
+```{r}
+#| label: setup-ch8
+#| include: false
+
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+library(patchwork)
+library(kableExtra)
+
+# ---- Percentile Helper ----
+add_percentile <- function(x) {
+  pct <- round(percent_rank(x) * 100)
+  label <- case_when(
+    pct < 33.33 ~ "low",
+    pct < 66.67 ~ "mid",
+    TRUE ~ "high"
+  )
+  paste0(pct, "% (", label, ")")
+}
+
+# ---- Color Palette for Chapter 8 ----
+colors_sm_addiction  <- "#7209b7"   # vivid purple — Social Media Addiction
+colors_sm_hours      <- "#b5179e"   # magenta — Social Media Hours
+colors_sleep         <- "#6a3d9a"   # purple — Sleep
+colors_exercise_hb   <- "#c44e7a"   # pink — Exercise
+colors_stress        <- "#f72585"   # hot pink — Stress
+colors_lifesat       <- "#4cc9f0"   # sky blue — Life Satisfaction
+colors_health_status <- "#06d6a0"   # green — Health Status
+colors_mental_health <- "#ffd166"   # golden yellow — Mental Health
+
+# ---- Load & Prepare Data ----
+alldata <- read_csv("data/survey_data.csv", show_col_types = FALSE)
+
+alldata <- alldata %>%
+  filter(
+    !is.na(PASSWORD),
+    PASSWORD != "PASSWORD",
+    !grepl("ImportId", PASSWORD, fixed = TRUE),
+    !grepl("ImportId", YEAR, fixed = TRUE),
+    PASSWORD != "What is the current year?",
+    YEAR != "What is the current year?"
+  )
+
+# Remove duplicate olive0925 (keep first occurrence, drop second)
+olive_rows <- which(alldata$PASSWORD == "olive0925")
+if (length(olive_rows) > 1) {
+  alldata <- alldata[-olive_rows[-1], ]
+}
+
+# Clean passwords: replace identifying entries
+alldata <- alldata %>%
+  mutate(
+    PASSWORD = case_when(
+      PASSWORD == "Powerisgay2!" ~ "Power2",
+      PASSWORD == "K1lc0yne$402" ~ "Health$402",
+      PASSWORD == "Charlie1203" ~ "Health1203",
+      PASSWORD == "aaron4103" ~ "health4103",
+      PASSWORD == "brandonc1248" ~ "health1248",
+      PASSWORD == "joyas1244" ~ "health1244",
+      PASSWORD == "olive0925" ~ "health0925",
+      TRUE ~ PASSWORD
+    )
+  )
+
+alldata <- alldata %>%
+  mutate(
+    CLASS = factor(
+      CLASS,
+      levels = c("1", "2", "3"),
+      labels = c("PH322", "ANTH206", "Peer Mentor / TA")
+    )
+  )
+```
+
+This chapter examines your **social media use patterns** and **positive health behavior profile**. As health communicators, understanding your own relationship with social media --- including potential problematic use --- is essential for designing effective campaigns on digital platforms. Your health behaviors provide context for how lifestyle factors intersect with communication patterns.
+
+::: {.callout-important}
+## PH 322 — Week 9: Channels
+This week focuses on selecting communication channels (social media platforms) for your health campaign. Your social media use scores and platform preferences help you understand your own digital behavior and design channel strategies that reach diverse audiences.
+:::
+
+```{r}
+#| label: health-behaviors-compute
+
+hb_data <- alldata %>%
+  select(CLASS, PASSWORD, LIFESAT, SLEEP, SLEEP2, EXERCISE, STRESS,
+         SOCIALMEDIA, EATENFOOD, HEALTHSTATUS, MENTALHEALTHSTATUS) %>%
+  mutate(across(c(LIFESAT, SLEEP, SLEEP2, EXERCISE, STRESS, SOCIALMEDIA,
+                  EATENFOOD, HEALTHSTATUS, MENTALHEALTHSTATUS), ~ as.numeric(.)))
+
+# Recode negative values (refuse/don't know) to NA for food security
+hb_data <- hb_data %>%
+  mutate(EATENFOOD = ifelse(EATENFOOD < 0, NA, EATENFOOD))
+```
+
+---
+
+## Social Media
+
+Social media use is a critical consideration for health communicators. This section pairs two complementary measures: **Social Media Addiction**, which captures problematic patterns of social media engagement, and **Social Media Hours**, which quantifies the raw time spent on platforms each day. Together, these indicators reveal both the quantity and quality of your social media relationship.
+
+### Constructs {.unnumbered}
+
+- **Social Media Addiction** (adapted from the Bergen Social Media Addiction Scale; [Andreassen et al., 2012](https://doi.org/10.2466/02.09.18.PR0.110.2.501-517)): Measures problematic social media use, including interference with social life and daily activities, agitation when unable to use social media, unsuccessful attempts to reduce use, and spending more time than intended.
+- **Social Media Hours**: Self-reported daily time spent on social media platforms (hours per day).
+
+### Measures {.unnumbered}
+
+- **Social Media Addiction**: 5 items rated on a 7-point scale: 1 = *Totally Disagree*, 2 = *Disagree*, 3 = *Slightly Disagree*, 4 = *Neutral*, 5 = *Slightly Agree*, 6 = *Agree*, 7 = *Totally Agree*. Higher scores indicate more problematic social media use.
+- **Social Media Hours**: A single item asking how many hours per day you spend on social media (continuous).
+
+**Example item (Addiction):**
+
+- *"My social life has suffered because of my interaction on social media."*
+
+```{r}
+#| label: sm-addiction-compute
+
+sm_data <- alldata %>%
+  select(CLASS, PASSWORD, all_of(paste0("SOCIALMEDIAUSE_", 1:5))) %>%
+  mutate(across(starts_with("SOCIALMEDIAUSE_"), ~ as.numeric(.)))
+
+sm_data <- sm_data %>%
+  mutate(
+    sm_addiction = rowMeans(
+      pick(starts_with("SOCIALMEDIAUSE_")), na.rm = TRUE
+    )
+  )
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: sm-social-media-table
+
+# Merge SM addiction with SM hours from hb_data
+sm_table_data <- sm_data %>%
+  select(PASSWORD, sm_addiction) %>%
+  left_join(hb_data %>% select(PASSWORD, SOCIALMEDIA), by = "PASSWORD")
+
+# Compute percentiles on ALL participants
+sm_table_all <- sm_table_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  mutate(
+    sm_addiction_pct = add_percentile(sm_addiction),
+    sm_hours_pct = add_percentile(SOCIALMEDIA)
+  )
+
+# Filter to PH322 for display
+sm_table_display <- sm_data %>%
+  select(CLASS, PASSWORD, sm_addiction) %>%
+  left_join(hb_data %>% select(PASSWORD, SOCIALMEDIA), by = "PASSWORD") %>%
+  filter(!is.na(PASSWORD), PASSWORD != "",
+         CLASS == "PH322") %>%
+  select(PASSWORD, sm_addiction, SOCIALMEDIA)
+
+# Recompute percentiles using ALL participants, then filter
+sm_table_final <- sm_table_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  arrange(PASSWORD) %>%
+  transmute(
+    Password = PASSWORD,
+    `SM Addiction` = round(sm_addiction, 2),
+    `SM Addiction (%)` = add_percentile(sm_addiction),
+    `SM Hours` = round(SOCIALMEDIA, 1),
+    `SM Hours (%)` = add_percentile(SOCIALMEDIA)
+  )
+
+# Now filter to PH322 passwords only
+ph322_passwords <- alldata %>%
+  filter(CLASS == "PH322") %>%
+  pull(PASSWORD)
+
+sm_table_final <- sm_table_final %>%
+  filter(Password %in% ph322_passwords)
+
+kbl(sm_table_final,
+    escape = FALSE,
+    col.names = c("Password",
+                   paste0("<span style='color:", colors_sm_addiction, "'>SM Addiction</span>"),
+                   paste0("<span style='color:", colors_sm_addiction, "'>SM Addiction (%)</span>"),
+                   paste0("<span style='color:", colors_sm_hours, "'>SM Hours</span>"),
+                   paste0("<span style='color:", colors_sm_hours, "'>SM Hours (%)</span>")),
+    caption = "Social Media: Addiction Scale & Daily Hours") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: sm-social-media-density
+#| fig-cap: "Social Media: Addiction scale and daily hours side by side. Dashed lines = 33rd and 67th percentiles."
+#| fig-width: 12
+#| fig-height: 5
+
+# SM Addiction density
+q33_sma <- quantile(sm_data$sm_addiction, probs = 1/3, na.rm = TRUE)
+q67_sma <- quantile(sm_data$sm_addiction, probs = 2/3, na.rm = TRUE)
+
+p_sm_addiction <- ggdensity(
+  sm_data %>% filter(!is.na(sm_addiction)),
+  x = "sm_addiction", fill = colors_sm_addiction, color = colors_sm_addiction, alpha = 0.4
+) +
+  geom_vline(xintercept = q33_sma, linetype = "dashed", color = colors_sm_addiction, linewidth = 0.6) +
+  geom_vline(xintercept = q67_sma, linetype = "dashed", color = colors_sm_addiction, linewidth = 0.6) +
+  coord_cartesian(xlim = c(1, 7)) +
+  scale_x_continuous(breaks = 1:7, labels = c("Totally\nDisagree (1)", "Disagree\n(2)", "Slightly\nDisagree (3)", "Neutral\n(4)", "Slightly\nAgree (5)", "Agree\n(6)", "Totally\nAgree (7)")) +
+  labs(
+    title = "Social Media Addiction",
+    subtitle = "Dashed lines = 33rd and 67th percentiles",
+    x = "Composite Score (higher = more problematic use)", y = "Density"
+  ) +
+  theme_minimal() + theme(legend.position = "none")
+
+# SM Hours density
+q33_smh <- quantile(hb_data$SOCIALMEDIA, probs = 1/3, na.rm = TRUE)
+q67_smh <- quantile(hb_data$SOCIALMEDIA, probs = 2/3, na.rm = TRUE)
+
+p_sm_hours <- ggdensity(
+  hb_data %>% filter(!is.na(SOCIALMEDIA)),
+  x = "SOCIALMEDIA", fill = colors_sm_hours, color = colors_sm_hours, alpha = 0.4
+) +
+  geom_vline(xintercept = q33_smh, linetype = "dashed", color = colors_sm_hours, linewidth = 0.6) +
+  geom_vline(xintercept = q67_smh, linetype = "dashed", color = colors_sm_hours, linewidth = 0.6) +
+  labs(
+    title = "Social Media Hours (per day)",
+    subtitle = "Dashed lines = 33rd and 67th percentiles",
+    x = "Hours per Day", y = "Density"
+  ) +
+  theme_minimal() + theme(legend.position = "none")
+
+p_sm_addiction + p_sm_hours +
+  plot_annotation(
+    title = "All Participants: Social Media Use",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## Lifestyle Health
+
+Sleep and exercise are foundational lifestyle behaviors that directly impact physical and mental health. This section pairs **Sleep** (hours per night) and **Exercise** (days of physical activity per week) to give you a snapshot of two key health behaviors that influence energy, cognition, stress management, and overall well-being.
+
+### Constructs {.unnumbered}
+
+- **Sleep**: Self-reported average hours of sleep per night. Adequate sleep (typically 7--9 hours for adults) is associated with better cognitive performance, emotional regulation, and immune function.
+- **Exercise**: Self-reported number of days per week with physical activity. Regular exercise is one of the strongest predictors of both physical and mental health outcomes.
+
+### Measures {.unnumbered}
+
+- **Sleep**: A single item asking how many hours of sleep you typically get per night (continuous).
+- **Exercise**: A single item asking how many days per week you engage in physical activity (0--7 days).
+
+```{r}
+#| label: lifestyle-compute
+#| include: false
+
+# Sleep and Exercise are already in hb_data (SLEEP, EXERCISE columns)
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: lifestyle-table
+
+# Compute percentiles on ALL participants, then filter to PH322
+lifestyle_table_final <- hb_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  arrange(PASSWORD) %>%
+  transmute(
+    Password = PASSWORD,
+    `Sleep (hrs)` = round(SLEEP, 1),
+    `Sleep (%)` = add_percentile(SLEEP),
+    `Exercise (days)` = round(EXERCISE, 1),
+    `Exercise (%)` = add_percentile(EXERCISE)
+  )
+
+lifestyle_table_final <- lifestyle_table_final %>%
+  filter(Password %in% ph322_passwords)
+
+kbl(lifestyle_table_final,
+    escape = FALSE,
+    col.names = c("Password",
+                   paste0("<span style='color:", colors_sleep, "'>Sleep (hrs)</span>"),
+                   paste0("<span style='color:", colors_sleep, "'>Sleep (%)</span>"),
+                   paste0("<span style='color:", colors_exercise_hb, "'>Exercise (days)</span>"),
+                   paste0("<span style='color:", colors_exercise_hb, "'>Exercise (%)</span>")),
+    caption = "Lifestyle Health: Sleep & Exercise") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: lifestyle-density
+#| fig-cap: "Lifestyle Health: Sleep and Exercise side by side. Dashed lines = 33rd and 67th percentiles."
+#| fig-width: 12
+#| fig-height: 5
+
+# Sleep density
+q33_sleep <- quantile(hb_data$SLEEP, probs = 1/3, na.rm = TRUE)
+q67_sleep <- quantile(hb_data$SLEEP, probs = 2/3, na.rm = TRUE)
+
+p_sleep <- ggdensity(
+  hb_data %>% filter(!is.na(SLEEP)),
+  x = "SLEEP", fill = colors_sleep, color = colors_sleep, alpha = 0.4
+) +
+  geom_vline(xintercept = q33_sleep, linetype = "dashed", color = colors_sleep, linewidth = 0.6) +
+  geom_vline(xintercept = q67_sleep, linetype = "dashed", color = colors_sleep, linewidth = 0.6) +
+  labs(
+    title = "Sleep (hours per night)",
+    subtitle = "Dashed lines = 33rd and 67th percentiles",
+    x = "Hours", y = "Density"
+  ) +
+  theme_minimal() + theme(legend.position = "none")
+
+# Exercise density
+q33_exercise <- quantile(hb_data$EXERCISE, probs = 1/3, na.rm = TRUE)
+q67_exercise <- quantile(hb_data$EXERCISE, probs = 2/3, na.rm = TRUE)
+
+p_exercise_hb <- ggdensity(
+  hb_data %>% filter(!is.na(EXERCISE)),
+  x = "EXERCISE", fill = colors_exercise_hb, color = colors_exercise_hb, alpha = 0.4
+) +
+  geom_vline(xintercept = q33_exercise, linetype = "dashed", color = colors_exercise_hb, linewidth = 0.6) +
+  geom_vline(xintercept = q67_exercise, linetype = "dashed", color = colors_exercise_hb, linewidth = 0.6) +
+  coord_cartesian(xlim = c(0, 7)) +
+  labs(
+    title = "Exercise (days per week)",
+    subtitle = "Dashed lines = 33rd and 67th percentiles",
+    x = "Days", y = "Density"
+  ) +
+  theme_minimal() + theme(legend.position = "none")
+
+p_sleep + p_exercise_hb +
+  plot_annotation(
+    title = "All Participants: Lifestyle Health",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## Mental Health
+
+Stress and life satisfaction are complementary indicators of mental well-being. **Stress** captures the burden of daily pressures, while **Life Satisfaction** reflects a broader cognitive evaluation of how well life is going. These two measures often move in opposite directions --- higher stress tends to accompany lower life satisfaction --- and together they provide a more complete picture of your psychological health.
+
+### Constructs {.unnumbered}
+
+- **Stress**: Self-reported stress level on a 0--10 scale. Higher scores indicate greater perceived stress.
+- **Life Satisfaction**: Overall satisfaction with life, reflecting a global cognitive judgment about one's quality of life.
+
+### Measures {.unnumbered}
+
+- **Stress**: A single item rated from 0 = *No Stress* to 10 = *Extreme Stress*.
+- **Life Satisfaction**: A single item rated on a 6-point scale: 1 = *Strongly Disagree* to 6 = *Strongly Agree*.
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: mental-health-table
+
+# Compute percentiles on ALL participants, then filter to PH322
+mental_table_final <- hb_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  arrange(PASSWORD) %>%
+  transmute(
+    Password = PASSWORD,
+    `Stress` = round(STRESS, 1),
+    `Stress (%)` = add_percentile(STRESS),
+    `Life Satisfaction` = round(LIFESAT, 1),
+    `Life Sat (%)` = add_percentile(LIFESAT)
+  )
+
+mental_table_final <- mental_table_final %>%
+  filter(Password %in% ph322_passwords)
+
+kbl(mental_table_final,
+    escape = FALSE,
+    col.names = c("Password",
+                   paste0("<span style='color:", colors_stress, "'>Stress</span>"),
+                   paste0("<span style='color:", colors_stress, "'>Stress (%)</span>"),
+                   paste0("<span style='color:", colors_lifesat, "'>Life Satisfaction</span>"),
+                   paste0("<span style='color:", colors_lifesat, "'>Life Sat (%)</span>")),
+    caption = "Mental Health: Stress & Life Satisfaction") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: mental-health-density
+#| fig-cap: "Mental Health: Stress and Life Satisfaction side by side. Dashed lines = 33rd and 67th percentiles."
+#| fig-width: 12
+#| fig-height: 5
+
+# Stress density
+q33_stress <- quantile(hb_data$STRESS, probs = 1/3, na.rm = TRUE)
+q67_stress <- quantile(hb_data$STRESS, probs = 2/3, na.rm = TRUE)
+
+p_stress <- ggdensity(
+  hb_data %>% filter(!is.na(STRESS)),
+  x = "STRESS", fill = colors_stress, color = colors_stress, alpha = 0.4
+) +
+  geom_vline(xintercept = q33_stress, linetype = "dashed", color = colors_stress, linewidth = 0.6) +
+  geom_vline(xintercept = q67_stress, linetype = "dashed", color = colors_stress, linewidth = 0.6) +
+  coord_cartesian(xlim = c(0, 10)) +
+  labs(
+    title = "Stress Level",
+    subtitle = "Dashed lines = 33rd and 67th percentiles",
+    x = "Score (0 = No Stress, 10 = Extreme Stress)", y = "Density"
+  ) +
+  theme_minimal() + theme(legend.position = "none")
+
+# Life Satisfaction density
+q33_lifesat <- quantile(hb_data$LIFESAT, probs = 1/3, na.rm = TRUE)
+q67_lifesat <- quantile(hb_data$LIFESAT, probs = 2/3, na.rm = TRUE)
+
+p_lifesat <- ggdensity(
+  hb_data %>% filter(!is.na(LIFESAT)),
+  x = "LIFESAT", fill = colors_lifesat, color = colors_lifesat, alpha = 0.4
+) +
+  geom_vline(xintercept = q33_lifesat, linetype = "dashed", color = colors_lifesat, linewidth = 0.6) +
+  geom_vline(xintercept = q67_lifesat, linetype = "dashed", color = colors_lifesat, linewidth = 0.6) +
+  scale_x_continuous(breaks = 1:6, labels = c("Strongly\nDisagree (1)", "Disagree\n(2)", "Slightly\nDisagree (3)", "Slightly\nAgree (4)", "Agree\n(5)", "Strongly\nAgree (6)")) +
+  labs(
+    title = "Life Satisfaction",
+    subtitle = "Dashed lines = 33rd and 67th percentiles",
+    x = "Score", y = "Density"
+  ) +
+  theme_minimal() + theme(legend.position = "none")
+
+p_stress + p_lifesat +
+  plot_annotation(
+    title = "All Participants: Mental Health Indicators",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## Subjective Health
+
+Subjective health assessments capture how you perceive your own physical and mental health overall. **Health Status** and **Mental Health Status** are widely used single-item measures in public health research because they are strong predictors of objective health outcomes, healthcare utilization, and mortality. These self-ratings reflect an integrated judgment that incorporates factors you may not consciously articulate.
+
+### Constructs {.unnumbered}
+
+- **Health Status**: Self-rated overall physical health, ranging from Poor to Excellent.
+- **Mental Health Status**: Self-rated overall mental health, ranging from Poor to Excellent.
+
+### Measures {.unnumbered}
+
+- **Health Status**: A single item rated on a 5-point scale: 1 = *Poor*, 2 = *Fair*, 3 = *Good*, 4 = *Very Good*, 5 = *Excellent*.
+- **Mental Health Status**: A single item rated on a 5-point scale: 1 = *Poor*, 2 = *Fair*, 3 = *Good*, 4 = *Very Good*, 5 = *Excellent*.
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: subjective-health-table
+
+# Compute percentiles on ALL participants, then filter to PH322
+subjective_table_final <- hb_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  arrange(PASSWORD) %>%
+  transmute(
+    Password = PASSWORD,
+    `Health Status` = round(HEALTHSTATUS, 1),
+    `Health Status (%)` = add_percentile(HEALTHSTATUS),
+    `Mental Health` = round(MENTALHEALTHSTATUS, 1),
+    `Mental Health (%)` = add_percentile(MENTALHEALTHSTATUS)
+  )
+
+subjective_table_final <- subjective_table_final %>%
+  filter(Password %in% ph322_passwords)
+
+kbl(subjective_table_final,
+    escape = FALSE,
+    col.names = c("Password",
+                   paste0("<span style='color:", colors_health_status, "'>Health Status</span>"),
+                   paste0("<span style='color:", colors_health_status, "'>Health Status (%)</span>"),
+                   paste0("<span style='color:", colors_mental_health, "'>Mental Health</span>"),
+                   paste0("<span style='color:", colors_mental_health, "'>Mental Health (%)</span>")),
+    caption = "Subjective Health: Health Status & Mental Health Status") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"),
+                full_width = FALSE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: subjective-health-density
+#| fig-cap: "Subjective Health: Health Status and Mental Health Status side by side. Dashed lines = 33rd and 67th percentiles."
+#| fig-width: 12
+#| fig-height: 5
+
+# Health Status density
+q33_health <- quantile(hb_data$HEALTHSTATUS, probs = 1/3, na.rm = TRUE)
+q67_health <- quantile(hb_data$HEALTHSTATUS, probs = 2/3, na.rm = TRUE)
+
+p_health_status <- ggdensity(
+  hb_data %>% filter(!is.na(HEALTHSTATUS)),
+  x = "HEALTHSTATUS", fill = colors_health_status, color = colors_health_status, alpha = 0.4
+) +
+  geom_vline(xintercept = q33_health, linetype = "dashed", color = colors_health_status, linewidth = 0.6) +
+  geom_vline(xintercept = q67_health, linetype = "dashed", color = colors_health_status, linewidth = 0.6) +
+  scale_x_continuous(breaks = 1:5, labels = c("Poor\n(1)", "Fair\n(2)", "Good\n(3)", "Very\nGood (4)", "Excellent\n(5)")) +
+  labs(
+    title = "Health Status",
+    subtitle = "Dashed lines = 33rd and 67th percentiles",
+    x = "Score", y = "Density"
+  ) +
+  theme_minimal() + theme(legend.position = "none")
+
+# Mental Health Status density
+q33_mental <- quantile(hb_data$MENTALHEALTHSTATUS, probs = 1/3, na.rm = TRUE)
+q67_mental <- quantile(hb_data$MENTALHEALTHSTATUS, probs = 2/3, na.rm = TRUE)
+
+p_mental_health <- ggdensity(
+  hb_data %>% filter(!is.na(MENTALHEALTHSTATUS)),
+  x = "MENTALHEALTHSTATUS", fill = colors_mental_health, color = colors_mental_health, alpha = 0.4
+) +
+  geom_vline(xintercept = q33_mental, linetype = "dashed", color = colors_mental_health, linewidth = 0.6) +
+  geom_vline(xintercept = q67_mental, linetype = "dashed", color = colors_mental_health, linewidth = 0.6) +
+  scale_x_continuous(breaks = 1:5, labels = c("Poor\n(1)", "Fair\n(2)", "Good\n(3)", "Very\nGood (4)", "Excellent\n(5)")) +
+  labs(
+    title = "Mental Health Status",
+    subtitle = "Dashed lines = 33rd and 67th percentiles",
+    x = "Score", y = "Density"
+  ) +
+  theme_minimal() + theme(legend.position = "none")
+
+p_health_status + p_mental_health +
+  plot_annotation(
+    title = "All Participants: Subjective Health Assessments",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## Chapter Summary: All Health Behavior Indicators {.unnumbered}
+
+```{r}
+#| label: ch8-patchwork-summary
+#| fig-cap: "Chapter Summary: Eight health behavior indicators across four domains."
+#| fig-width: 14
+#| fig-height: 12
+
+# Rebuild small versions for patchwork
+p_sma_sm <- p_sm_addiction + labs(title = "SM\nAddiction", subtitle = NULL) +
+  theme(plot.title = element_text(size = 9), axis.text.x = element_text(size = 5))
+p_smh_sm <- p_sm_hours + labs(title = "SM\nHours", subtitle = NULL) +
+  theme(plot.title = element_text(size = 9))
+p_sleep_sm <- p_sleep + labs(title = "Sleep\n(hrs/night)", subtitle = NULL) +
+  theme(plot.title = element_text(size = 9))
+p_exer_sm <- p_exercise_hb + labs(title = "Exercise\n(days/week)", subtitle = NULL) +
+  theme(plot.title = element_text(size = 9))
+p_stress_sm <- p_stress + labs(title = "Stress\nLevel", subtitle = NULL) +
+  theme(plot.title = element_text(size = 9))
+p_lifesat_sm <- p_lifesat + labs(title = "Life\nSatisfaction", subtitle = NULL) +
+  theme(plot.title = element_text(size = 9), axis.text.x = element_text(size = 5))
+p_health_sm <- p_health_status + labs(title = "Health\nStatus", subtitle = NULL) +
+  theme(plot.title = element_text(size = 9), axis.text.x = element_text(size = 6))
+p_mental_sm <- p_mental_health + labs(title = "Mental Health\nStatus", subtitle = NULL) +
+  theme(plot.title = element_text(size = 9), axis.text.x = element_text(size = 6))
+
+(p_sma_sm + p_smh_sm + p_sleep_sm + p_exer_sm) /
+(p_stress_sm + p_lifesat_sm + p_health_sm + p_mental_sm) +
+  plot_annotation(
+    title = "Chapter Summary: Health Behaviors",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## References {.unnumbered}
+
+Andreassen, C. S., Torsheim, T., Brunborg, G. S., & Pallesen, S. (2012). Development of a Facebook addiction scale. *Psychological Reports*, *110*(2), 501--517. <https://doi.org/10.2466/02.09.18.PR0.110.2.501-517>

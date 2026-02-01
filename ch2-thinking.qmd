@@ -1,0 +1,72 @@
+# Thinking Preferences {#sec-thinking-preferences}
+
+This chapter introduces the concept of **thinking preferences** --- the idea that people tend to favor certain cognitive approaches when solving problems, communicating, and making decisions. Understanding your own thinking preferences is the first step toward becoming an effective health communicator, because it helps you recognize your natural strengths, your blind spots, and how to connect with audiences who think differently than you do.
+
+::: {.callout-important}
+## PH 322 — Week 2: Thinking Preferences & Self-Awareness
+This week introduces thinking preferences as a foundation for understanding yourself as a communicator. Knowing how you naturally process information helps you anticipate how others might respond to your health messages --- and design campaigns that reach a wider range of audiences.
+:::
+
+---
+
+## The Four Thinking Preferences
+
+Research on cognitive styles and thinking preferences suggests that people tend to favor one or more of four broad thinking orientations. These are not rigid categories --- most people use all four at different times --- but each of us has natural tendencies that shape how we approach tasks, process information, and communicate with others.
+
+### Analytical Thinking
+
+People who favor **analytical thinking** are drawn to data, logic, and evidence. They prefer to work with facts, numbers, and well-reasoned arguments. In health communication, analytical thinkers tend to focus on the strength of the evidence base, the precision of statistical claims, and the logical structure of an argument.
+
+**Strengths in health communication**: Evaluating research quality, identifying logical fallacies in health claims, crafting evidence-based messages
+
+### Structural Thinking
+
+People who favor **structural thinking** prefer organization, planning, and reliability. They value clear processes, step-by-step approaches, and attention to detail. In health communication, structural thinkers excel at campaign planning, implementation timelines, and ensuring messages are consistent and well-organized.
+
+**Strengths in health communication**: Developing systematic campaign plans, creating consistent messaging frameworks, managing project timelines and deliverables
+
+### Social Thinking
+
+People who favor **social thinking** are attuned to emotions, relationships, and interpersonal dynamics. They naturally consider how people feel, how groups interact, and how messages affect individuals. In health communication, social thinkers are often skilled at understanding audience needs, building trust, and crafting messages that resonate emotionally.
+
+**Strengths in health communication**: Understanding audience perspectives, building community engagement, designing empathetic and culturally sensitive messages
+
+### Conceptual Thinking
+
+People who favor **conceptual thinking** are drawn to big-picture ideas, innovation, and creative possibilities. They enjoy brainstorming, imagining new approaches, and thinking about how things could be different. In health communication, conceptual thinkers often generate novel campaign ideas, identify unexpected connections, and push creative boundaries.
+
+**Strengths in health communication**: Generating creative campaign concepts, identifying innovative channels and formats, connecting health topics to broader cultural narratives
+
+---
+
+## Why Thinking Preferences Matter for Health Communication
+
+No single thinking preference is better than another --- effective health communication requires *all four*. A successful health campaign needs:
+
+- **Analytical thinking** to ensure the message is grounded in evidence
+- **Structural thinking** to execute the campaign plan systematically
+- **Social thinking** to connect with audiences on a human level
+- **Conceptual thinking** to create messages that capture attention and inspire change
+
+By understanding your own preferences, you can:
+
+1. **Leverage your strengths** --- lean into your natural style when it serves the task
+2. **Compensate for gaps** --- deliberately engage less-preferred styles when needed
+3. **Collaborate more effectively** --- value teammates whose preferences complement yours
+4. **Design for diverse audiences** --- create campaigns that appeal to multiple thinking styles
+
+---
+
+## Learn More
+
+The concept of thinking preferences has been explored through several frameworks in psychology and organizational development. Two widely-used models include:
+
+- **Herrmann Brain Dominance Instrument (HBDI)**: Developed by Ned Herrmann, this model maps thinking preferences across four quadrants. Learn more at [Herrmann Global](https://www.thinkherrmann.com/).
+- **Emergenetics**: Developed by Geil Browning, this profile measures thinking preferences alongside behavioral attributes. Learn more at [Emergenetics](https://www.emergenetics.com/).
+
+Both frameworks highlight that people differ in how they naturally approach thinking, and that awareness of these differences is key to effective communication and teamwork.
+
+::: {.callout-note}
+## Reflect on Your Thinking Preferences
+As you move through the rest of this guide, consider which thinking preference you rely on most when interpreting your scores. Do you focus on the numbers (analytical)? The patterns (structural)? How the results make you feel (social)? Or the bigger implications (conceptual)?
+:::

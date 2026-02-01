@@ -1,0 +1,606 @@
+# Health Attributions & Morality {#sec-moral-foundations}
+
+```{r}
+#| label: setup-ch4
+#| include: false
+
+library(tidyverse)
+library(ggplot2)
+library(ggpubr)
+library(patchwork)
+library(kableExtra)
+
+# ---- Percentile Helper ----
+add_percentile <- function(x) {
+  pct <- round(percent_rank(x) * 100)
+  label <- case_when(
+    pct < 33.33 ~ "low",
+    pct < 66.67 ~ "mid",
+    TRUE ~ "high"
+  )
+  paste0(pct, "% (", label, ")")
+}
+
+# ---- Color Palette for Chapter 4 ----
+# Moral Foundations — 5 distinct colors
+colors_harm      <- "#e63946"   # red — Harm/Care
+colors_fairness  <- "#457b9d"   # steel blue — Fairness/Reciprocity
+colors_ingroup   <- "#2a9d8f"   # teal — Ingroup/Loyalty
+colors_authority <- "#e9c46a"   # gold — Authority/Respect
+colors_purity    <- "#9b5de5"   # purple — Purity/Sanctity
+
+# Mental Illness Attributions — 4 colors
+colors_social_attr   <- "#f4845f"   # coral — Social Attributions
+colors_bio_attr      <- "#577590"   # slate blue — Biological Attributions
+colors_lifestyle_attr <- "#43aa8b"  # green — Lifestyle Attributions
+colors_personal_attr  <- "#f8961e"  # orange — Personal Attributions
+
+# Essentialist Beliefs — 2 colors
+colors_categorical  <- "#6d6875"   # mauve — Categorical Thinking
+colors_biological   <- "#b5838d"   # rose — Biological Essentialism
+
+# ---- Load & Prepare Data ----
+alldata <- read_csv("data/survey_data.csv", show_col_types = FALSE)
+
+alldata <- alldata %>%
+  filter(
+    !is.na(PASSWORD),
+    PASSWORD != "PASSWORD",
+    !grepl("ImportId", PASSWORD, fixed = TRUE),
+    !grepl("ImportId", YEAR, fixed = TRUE),
+    PASSWORD != "What is the current year?",
+    YEAR != "What is the current year?"
+  )
+
+# Remove duplicate olive0925 (keep first occurrence, drop second)
+olive_rows <- which(alldata$PASSWORD == "olive0925")
+if (length(olive_rows) > 1) {
+  alldata <- alldata[-olive_rows[-1], ]
+}
+
+# Clean passwords: replace identifying entries
+alldata <- alldata %>%
+  mutate(
+    PASSWORD = case_when(
+      PASSWORD == "Powerisgay2!" ~ "Power2",
+      PASSWORD == "K1lc0yne$402" ~ "Health$402",
+      PASSWORD == "Charlie1203" ~ "Health1203",
+      PASSWORD == "aaron4103" ~ "health4103",
+      PASSWORD == "brandonc1248" ~ "health1248",
+      PASSWORD == "joyas1244" ~ "health1244",
+      PASSWORD == "olive0925" ~ "health0925",
+      TRUE ~ PASSWORD
+    )
+  )
+
+alldata <- alldata %>%
+  mutate(
+    CLASS = factor(
+      CLASS,
+      levels = c("1", "2", "3"),
+      labels = c("PH322", "ANTH206", "Peer Mentor / TA")
+    )
+  )
+```
+
+This chapter explores your **moral foundations**, **beliefs about the causes of mental illness**, and **essentialist beliefs about addiction**. These constructs shape how you make moral judgments, how you attribute the causes of health and disease, and how you view people with addiction --- all of which directly influence health communication strategies around tailoring, audience segmentation, and framing.
+
+::: {.callout-important}
+## PH 322 — Week 6: Audience Profile Based on Attributions
+This week explores how moral foundations, health attributions (biological, social, lifestyle, personal), and categorical vs. continuum conceptions of health influence the design of tailored health interventions.
+:::
+
+---
+
+## Moral Foundations Questionnaire
+
+### Constructs {.unnumbered}
+
+The **Moral Foundations Questionnaire** (MFQ; [Graham et al., 2011](https://doi.org/10.1037/a0021847)) measures five moral foundations that underlie moral judgments across cultures:
+
+- **Harm/Care**: Sensitivity to suffering and cruelty; concern for the well-being of others
+- **Fairness/Reciprocity**: Concern for justice, equal treatment, and proportional outcomes
+- **Ingroup/Loyalty**: Valuing group membership, patriotism, and loyalty to one's community
+- **Authority/Respect**: Respect for tradition, hierarchy, and social order
+- **Purity/Sanctity**: Concern about physical and spiritual purity, contamination, and disgust
+
+### Measures {.unnumbered}
+
+The MFQ contains 22 items across two blocks: Block 1 measures moral relevance (11 items; 1 = *Not at All Relevant* to 5 = *Extremely Relevant*) and Block 2 measures moral agreement (11 items; 1 = *Strongly Disagree* to 6 = *Strongly Agree*). Each foundation is scored from 2 relevance items and 2 agreement items (after rescaling). Item 6 in each block is a catch/attention-check item and is excluded from scoring.
+
+**Example items:**
+
+- Harm/Care (Relevance): *"Whether or not someone suffered emotionally"*
+- Harm/Care (Agreement): *"Compassion for those who are suffering is the most crucial virtue."*
+
+```{r}
+#| label: mfq-compute
+
+# Block 1: Relevance (PH322-W6.1_1 through _11), 5-point scale
+# Block 2: Agreement (PH322-W6.2_1 through _11), 6-point scale
+mfq_data <- alldata %>%
+  select(CLASS, PASSWORD,
+         matches("^PH322-W6\\.1_\\d+$"),
+         matches("^PH322-W6\\.2_\\d+$")) %>%
+  mutate(across(matches("^PH322-W6"), ~ as.numeric(.)))
+
+# Rescale Block 1 (1-5) to match Block 2 (1-6) using linear transform
+# Rescaled = (original - 1) / (5 - 1) * (6 - 1) + 1
+mfq_data <- mfq_data %>%
+  mutate(across(
+    matches("^PH322-W6\\.1_"),
+    ~ (. - 1) / 4 * 5 + 1,
+    .names = "{.col}_rescaled"
+  ))
+
+# Subscale item mapping (Block 1 relevance + Block 2 agreement):
+# Harm/Care:       Block1: 1, 7    Block2: 1, 7
+# Fairness:        Block1: 2, 8    Block2: 2, 8
+# Ingroup/Loyalty: Block1: 3, 9    Block2: 3, 9
+# Authority:       Block1: 4, 10   Block2: 4, 10
+# Purity:          Block1: 5, 11   Block2: 5, 11
+# (Item 6 in Block 1 is catch item; Item 6 in Block 2 is catch item)
+
+mfq_data <- mfq_data %>%
+  mutate(
+    mfq_harm = rowMeans(pick(
+      `PH322-W6.1_1_rescaled`, `PH322-W6.1_7_rescaled`,
+      `PH322-W6.2_1`, `PH322-W6.2_7`), na.rm = TRUE),
+    mfq_fairness = rowMeans(pick(
+      `PH322-W6.1_2_rescaled`, `PH322-W6.1_8_rescaled`,
+      `PH322-W6.2_2`, `PH322-W6.2_8`), na.rm = TRUE),
+    mfq_ingroup = rowMeans(pick(
+      `PH322-W6.1_3_rescaled`, `PH322-W6.1_9_rescaled`,
+      `PH322-W6.2_3`, `PH322-W6.2_9`), na.rm = TRUE),
+    mfq_authority = rowMeans(pick(
+      `PH322-W6.1_4_rescaled`, `PH322-W6.1_10_rescaled`,
+      `PH322-W6.2_4`, `PH322-W6.2_10`), na.rm = TRUE),
+    mfq_purity = rowMeans(pick(
+      `PH322-W6.1_5_rescaled`, `PH322-W6.1_11_rescaled`,
+      `PH322-W6.2_5`, `PH322-W6.2_11`), na.rm = TRUE)
+  )
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: mfq-password-table-a
+
+mfq_password <- mfq_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  select(PASSWORD, mfq_harm, mfq_fairness, mfq_ingroup, mfq_authority, mfq_purity) %>%
+  arrange(PASSWORD)
+
+mfq_table_a <- mfq_password %>%
+  select(PASSWORD, mfq_harm, mfq_fairness) %>%
+  mutate(
+    harm_pct = add_percentile(mfq_harm),
+    fairness_pct = add_percentile(mfq_fairness)
+  ) %>%
+  select(PASSWORD, mfq_harm, harm_pct, mfq_fairness, fairness_pct) %>%
+  mutate(across(where(is.numeric), ~ round(., 2)))
+
+kbl(
+  mfq_table_a,
+  escape = FALSE,
+  col.names = c("Password",
+                 paste0("<span style='color:", colors_harm, "'>Harm/Care</span>"),
+                 paste0("<span style='color:", colors_harm, "'>Harm/Care (%)</span>"),
+                 paste0("<span style='color:", colors_fairness, "'>Fairness</span>"),
+                 paste0("<span style='color:", colors_fairness, "'>Fairness (%)</span>")),
+  caption = "Moral Foundations: Harm/Care & Fairness/Reciprocity"
+) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE)
+```
+
+```{r}
+#| label: mfq-password-table-b
+
+mfq_table_b <- mfq_password %>%
+  select(PASSWORD, mfq_ingroup, mfq_authority) %>%
+  mutate(
+    ingroup_pct = add_percentile(mfq_ingroup),
+    authority_pct = add_percentile(mfq_authority)
+  ) %>%
+  select(PASSWORD, mfq_ingroup, ingroup_pct, mfq_authority, authority_pct) %>%
+  mutate(across(where(is.numeric), ~ round(., 2)))
+
+kbl(
+  mfq_table_b,
+  escape = FALSE,
+  col.names = c("Password",
+                 paste0("<span style='color:", colors_ingroup, "'>Ingroup/Loyalty</span>"),
+                 paste0("<span style='color:", colors_ingroup, "'>Ingroup/Loyalty (%)</span>"),
+                 paste0("<span style='color:", colors_authority, "'>Authority/Respect</span>"),
+                 paste0("<span style='color:", colors_authority, "'>Authority/Respect (%)</span>")),
+  caption = "Moral Foundations: Ingroup/Loyalty & Authority/Respect"
+) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE)
+```
+
+```{r}
+#| label: mfq-password-table-c
+
+mfq_table_c <- mfq_password %>%
+  select(PASSWORD, mfq_purity) %>%
+  mutate(
+    purity_pct = add_percentile(mfq_purity)
+  ) %>%
+  mutate(across(where(is.numeric), ~ round(., 2)))
+
+kbl(
+  mfq_table_c,
+  escape = FALSE,
+  col.names = c("Password",
+                 paste0("<span style='color:", colors_purity, "'>Purity/Sanctity</span>"),
+                 paste0("<span style='color:", colors_purity, "'>Purity/Sanctity (%)</span>")),
+  caption = "Moral Foundations: Purity/Sanctity"
+) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: mfq-density-pair1
+#| fig-cap: "Moral Foundations: Harm/Care & Fairness/Reciprocity across all participants. Dashed lines indicate 33rd and 67th percentiles."
+#| fig-width: 12
+#| fig-height: 5
+
+mfq_long <- mfq_data %>%
+  select(CLASS, starts_with("mfq_")) %>%
+  pivot_longer(cols = starts_with("mfq_"), names_to = "foundation", values_to = "score") %>%
+  mutate(
+    foundation = recode(foundation,
+      mfq_harm = "Harm/Care", mfq_fairness = "Fairness/Reciprocity",
+      mfq_ingroup = "Ingroup/Loyalty", mfq_authority = "Authority/Respect",
+      mfq_purity = "Purity/Sanctity"
+    ),
+    foundation = factor(foundation, levels = c("Harm/Care", "Fairness/Reciprocity",
+      "Ingroup/Loyalty", "Authority/Respect", "Purity/Sanctity"))
+  )
+
+mfq_colors <- c("Harm/Care" = colors_harm, "Fairness/Reciprocity" = colors_fairness,
+  "Ingroup/Loyalty" = colors_ingroup, "Authority/Respect" = colors_authority,
+  "Purity/Sanctity" = colors_purity)
+
+make_mfq_plot <- function(name, color) {
+  d <- mfq_long %>% filter(foundation == name)
+  q33 <- quantile(d$score, probs = 1/3, na.rm = TRUE)
+  q67 <- quantile(d$score, probs = 2/3, na.rm = TRUE)
+  ggdensity(d, x = "score", fill = color, color = color, alpha = 0.4) +
+    geom_vline(xintercept = q33, linetype = "dashed", color = color, linewidth = 0.6) +
+    geom_vline(xintercept = q67, linetype = "dashed", color = color, linewidth = 0.6) +
+    coord_cartesian(xlim = c(1, 6)) +
+    scale_x_continuous(breaks = 1:6, labels = c("Strongly\nDisagree (1)", "Moderately\nDisagree (2)", "Slightly\nDisagree (3)", "Slightly\nAgree (4)", "Moderately\nAgree (5)", "Strongly\nAgree (6)")) +
+    labs(title = name, x = "Composite Score", y = "Density") +
+    theme_minimal() + theme(legend.position = "none", plot.title = element_text(size = 10), axis.text.x = element_text(size = 6))
+}
+
+p_mh <- make_mfq_plot("Harm/Care", colors_harm)
+p_mf <- make_mfq_plot("Fairness/Reciprocity", colors_fairness)
+
+p_mh + p_mf +
+  plot_annotation(
+    title = "All Participants: Moral Foundations -- Harm/Care & Fairness/Reciprocity",
+    subtitle = "Dashed lines = 33rd and 67th percentiles for each foundation"
+  )
+```
+
+```{r}
+#| label: mfq-density-pair2
+#| fig-cap: "Moral Foundations: Ingroup/Loyalty & Authority/Respect across all participants. Dashed lines indicate 33rd and 67th percentiles."
+#| fig-width: 12
+#| fig-height: 5
+
+p_mi <- make_mfq_plot("Ingroup/Loyalty", colors_ingroup)
+p_ma <- make_mfq_plot("Authority/Respect", colors_authority)
+
+p_mi + p_ma +
+  plot_annotation(
+    title = "All Participants: Moral Foundations -- Ingroup/Loyalty & Authority/Respect",
+    subtitle = "Dashed lines = 33rd and 67th percentiles for each foundation"
+  )
+```
+
+```{r}
+#| label: mfq-density-single
+#| fig-cap: "Moral Foundations: Purity/Sanctity across all participants. Dashed lines indicate 33rd and 67th percentiles."
+#| fig-width: 7
+#| fig-height: 5
+
+p_mp <- make_mfq_plot("Purity/Sanctity", colors_purity)
+
+p_mp +
+  plot_annotation(
+    title = "All Participants: Moral Foundations -- Purity/Sanctity",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## Beliefs about the Causes of Mental Illness
+
+### Constructs {.unnumbered}
+
+The **Beliefs about the Causes of Mental Illness Scale** (Knettel, 2019) measures how people attribute the causes of mental illness across four categories. The scale presents a vignette about Cameron, a 30-year-old man with depression, and asks you to rate the importance of potential causes:
+
+- **Social Attributions**: Social injustice, lack of support, poverty, stressful circumstances, traumatic experiences
+- **Biological Attributions**: Genes, biological/medical disorder, chemical imbalance
+- **Personal Attributions**: Lack of will or self-control, personal choice, negative attitude
+- **Lifestyle Attributions**: Improper diet, exposure to germs, lack of physical activity
+
+### Measures {.unnumbered}
+
+The scale contains 14 items rated on a 7-point scale: 1 = *Not at All Important*, 2 = *Not Very Important*, 3 = *Somewhat Important*, 4 = *Moderately Important*, 5 = *Important*, 6 = *Significantly Important*, 7 = *This Cause Is Very Important*. Higher scores indicate stronger attribution to that category.
+
+**Example items:**
+
+- Social: *"Social injustice or discrimination"*
+- Biological: *"Genes or heredity"*
+- Personal: *"Lack of will or self-control"*
+- Lifestyle: *"Improper diet"*
+
+```{r}
+#| label: cameron-compute
+
+cameron_data <- alldata %>%
+  select(CLASS, PASSWORD, all_of(paste0("CAMEROONILLNESS_", 1:14))) %>%
+  mutate(across(starts_with("CAMEROONILLNESS_"), ~ as.numeric(.)))
+
+cameron_data <- cameron_data %>%
+  mutate(
+    attr_social = rowMeans(pick( CAMEROONILLNESS_1, CAMEROONILLNESS_2,
+      CAMEROONILLNESS_3, CAMEROONILLNESS_4, CAMEROONILLNESS_5), na.rm = TRUE),
+    attr_biological = rowMeans(pick( CAMEROONILLNESS_6, CAMEROONILLNESS_7,
+      CAMEROONILLNESS_8), na.rm = TRUE),
+    attr_personal = rowMeans(pick( CAMEROONILLNESS_9, CAMEROONILLNESS_10,
+      CAMEROONILLNESS_11), na.rm = TRUE),
+    attr_lifestyle = rowMeans(pick( CAMEROONILLNESS_12, CAMEROONILLNESS_13,
+      CAMEROONILLNESS_14), na.rm = TRUE)
+  )
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: cameron-password-table-a
+
+cameron_password <- cameron_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  select(PASSWORD, attr_social, attr_biological, attr_personal, attr_lifestyle) %>%
+  arrange(PASSWORD)
+
+cam_table_a <- cameron_password %>%
+  select(PASSWORD, attr_social, attr_biological) %>%
+  mutate(
+    social_pct = add_percentile(attr_social),
+    biological_pct = add_percentile(attr_biological)
+  ) %>%
+  select(PASSWORD, attr_social, social_pct, attr_biological, biological_pct) %>%
+  mutate(across(where(is.numeric), ~ round(., 2)))
+
+kbl(
+  cam_table_a,
+  escape = FALSE,
+  col.names = c("Password",
+                 paste0("<span style='color:", colors_social_attr, "'>Social</span>"),
+                 paste0("<span style='color:", colors_social_attr, "'>Social (%)</span>"),
+                 paste0("<span style='color:", colors_bio_attr, "'>Biological</span>"),
+                 paste0("<span style='color:", colors_bio_attr, "'>Biological (%)</span>")),
+  caption = "Beliefs about Causes of Mental Illness: Social & Biological Attributions"
+) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE)
+```
+
+```{r}
+#| label: cameron-password-table-b
+
+cam_table_b <- cameron_password %>%
+  select(PASSWORD, attr_personal, attr_lifestyle) %>%
+  mutate(
+    personal_pct = add_percentile(attr_personal),
+    lifestyle_pct = add_percentile(attr_lifestyle)
+  ) %>%
+  select(PASSWORD, attr_personal, personal_pct, attr_lifestyle, lifestyle_pct) %>%
+  mutate(across(where(is.numeric), ~ round(., 2)))
+
+kbl(
+  cam_table_b,
+  escape = FALSE,
+  col.names = c("Password",
+                 paste0("<span style='color:", colors_personal_attr, "'>Personal</span>"),
+                 paste0("<span style='color:", colors_personal_attr, "'>Personal (%)</span>"),
+                 paste0("<span style='color:", colors_lifestyle_attr, "'>Lifestyle</span>"),
+                 paste0("<span style='color:", colors_lifestyle_attr, "'>Lifestyle (%)</span>")),
+  caption = "Beliefs about Causes of Mental Illness: Personal & Lifestyle Attributions"
+) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: cameron-density-pair1
+#| fig-cap: "Beliefs about the Causes of Mental Illness: Social & Biological attributions. Dashed lines indicate 33rd and 67th percentiles."
+#| fig-width: 12
+#| fig-height: 5
+
+cameron_long <- cameron_data %>%
+  select(CLASS, starts_with("attr_")) %>%
+  pivot_longer(cols = starts_with("attr_"), names_to = "attribution", values_to = "score") %>%
+  mutate(
+    attribution = recode(attribution,
+      attr_social = "Social", attr_biological = "Biological",
+      attr_personal = "Personal", attr_lifestyle = "Lifestyle"
+    ),
+    attribution = factor(attribution, levels = c("Social", "Biological", "Personal", "Lifestyle"))
+  )
+
+cam_colors <- c("Social" = colors_social_attr, "Biological" = colors_bio_attr,
+  "Personal" = colors_personal_attr, "Lifestyle" = colors_lifestyle_attr)
+
+make_cam_plot <- function(name, color) {
+  d <- cameron_long %>% filter(attribution == name)
+  q33 <- quantile(d$score, probs = 1/3, na.rm = TRUE)
+  q67 <- quantile(d$score, probs = 2/3, na.rm = TRUE)
+  ggdensity(d, x = "score", fill = color, color = color, alpha = 0.4) +
+    geom_vline(xintercept = q33, linetype = "dashed", color = color, linewidth = 0.6) +
+    geom_vline(xintercept = q67, linetype = "dashed", color = color, linewidth = 0.6) +
+    coord_cartesian(xlim = c(1, 7)) + scale_x_continuous(breaks = 1:7, labels = c("Not at all\nimportant (1)", "(2)", "Somewhat\nimportant (3)", "Moderately\nimportant (4)", "Important\n(5)", "Significantly\nimportant (6)", "Very\nimportant (7)")) +
+    labs(title = paste0(name, " Attributions"), x = "Composite Score", y = "Density") +
+    theme_minimal() + theme(legend.position = "none", plot.title = element_text(size = 10), axis.text.x = element_text(size = 5))
+}
+
+p_cs <- make_cam_plot("Social", colors_social_attr)
+p_cb <- make_cam_plot("Biological", colors_bio_attr)
+
+p_cs + p_cb +
+  plot_annotation(
+    title = "All Participants: Beliefs about the Causes of Mental Illness -- Social & Biological",
+    subtitle = "Dashed lines = 33rd and 67th percentiles for each attribution type"
+  )
+```
+
+```{r}
+#| label: cameron-density-pair2
+#| fig-cap: "Beliefs about the Causes of Mental Illness: Personal & Lifestyle attributions. Dashed lines indicate 33rd and 67th percentiles."
+#| fig-width: 12
+#| fig-height: 5
+
+p_cp <- make_cam_plot("Personal", colors_personal_attr)
+p_cl <- make_cam_plot("Lifestyle", colors_lifestyle_attr)
+
+p_cp + p_cl +
+  plot_annotation(
+    title = "All Participants: Beliefs about the Causes of Mental Illness -- Personal & Lifestyle",
+    subtitle = "Dashed lines = 33rd and 67th percentiles for each attribution type"
+  )
+```
+
+---
+
+## Essentialist Beliefs about Addiction
+
+### Constructs {.unnumbered}
+
+The **Essentialist Beliefs about Addiction Scale** (GENBELIEFS3; 15 items) measures the extent to which you view addiction through an essentialist lens:
+
+- **Categorical Thinking**: Belief that people fall into discrete categories of "addict" or "non-addict," with clear-cut boundaries and predictable traits
+- **Biological Essentialism**: Belief that addiction is genetically or biologically determined
+
+### Measures {.unnumbered}
+
+The scale contains 15 items (11 categorical thinking, 4 biological essentialism) rated on a 5-point scale: 1 = *Strongly Disagree*, 5 = *Strongly Agree*. Higher scores indicate stronger essentialist beliefs.
+
+**Example items:**
+
+- Categorical Thinking: *"The boundaries that define the differences between addicts and non-addicts are clear-cut."*
+- Biological Essentialism: *"With enough scientific knowledge, addiction can be traced back to genetic causes."*
+
+```{r}
+#| label: essentialism-compute
+
+ess_data <- alldata %>%
+  select(CLASS, PASSWORD, all_of(paste0("GENBELIEFS3_", 1:15))) %>%
+  mutate(across(starts_with("GENBELIEFS3_"), ~ as.numeric(.)))
+
+ess_data <- ess_data %>%
+  mutate(
+    ess_categorical = rowMeans(
+      pick(all_of(paste0("GENBELIEFS3_", 1:11))), na.rm = TRUE
+    ),
+    ess_biological = rowMeans(
+      pick(all_of(paste0("GENBELIEFS3_", 12:15))), na.rm = TRUE
+    )
+  )
+```
+
+### Your Scores {.unnumbered}
+
+```{r}
+#| label: essentialism-password-table
+
+ess_password <- ess_data %>%
+  filter(!is.na(PASSWORD), PASSWORD != "") %>%
+  select(PASSWORD, ess_categorical, ess_biological) %>%
+  arrange(PASSWORD)
+
+ess_table <- ess_password %>%
+  mutate(
+    categorical_pct = add_percentile(ess_categorical),
+    biological_pct = add_percentile(ess_biological)
+  ) %>%
+  select(PASSWORD, ess_categorical, categorical_pct, ess_biological, biological_pct) %>%
+  mutate(across(where(is.numeric), ~ round(., 2)))
+
+kbl(
+  ess_table,
+  escape = FALSE,
+  col.names = c("Password",
+                 paste0("<span style='color:", colors_categorical, "'>Categorical Thinking</span>"),
+                 paste0("<span style='color:", colors_categorical, "'>Categorical (%)</span>"),
+                 paste0("<span style='color:", colors_biological, "'>Biological Essentialism</span>"),
+                 paste0("<span style='color:", colors_biological, "'>Biological (%)</span>")),
+  caption = "Essentialist Beliefs about Addiction: Your Composite Scores"
+) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE)
+```
+
+### Class Distribution {.unnumbered}
+
+```{r}
+#| label: essentialism-density
+#| fig-cap: "Essentialist Beliefs about Addiction: Categorical Thinking and Biological Essentialism. Dashed lines indicate 33rd and 67th percentiles."
+#| fig-width: 10
+#| fig-height: 5
+
+ess_long <- ess_data %>%
+  select(CLASS, ess_categorical, ess_biological) %>%
+  pivot_longer(cols = starts_with("ess_"), names_to = "subscale", values_to = "score") %>%
+  mutate(subscale = recode(subscale,
+    ess_categorical = "Categorical Thinking", ess_biological = "Biological Essentialism"))
+
+d_cat <- ess_long %>% filter(subscale == "Categorical Thinking")
+q33_cat <- quantile(d_cat$score, probs = 1/3, na.rm = TRUE)
+q67_cat <- quantile(d_cat$score, probs = 2/3, na.rm = TRUE)
+
+p_ess_cat <- ggdensity(
+  d_cat,
+  x = "score", fill = colors_categorical, color = colors_categorical, alpha = 0.4
+) +
+  geom_vline(xintercept = q33_cat, linetype = "dashed", color = colors_categorical, linewidth = 0.6) +
+  geom_vline(xintercept = q67_cat, linetype = "dashed", color = colors_categorical, linewidth = 0.6) +
+  coord_cartesian(xlim = c(1, 5)) + scale_x_continuous(breaks = 1:5, labels = c("Strongly\nDisagree (1)", "(2)", "(3)", "(4)", "Strongly\nAgree (5)")) +
+  labs(title = "Categorical Thinking", x = "Composite Score", y = "Density") +
+  theme_minimal() + theme(legend.position = "none")
+
+d_bio <- ess_long %>% filter(subscale == "Biological Essentialism")
+q33_bio <- quantile(d_bio$score, probs = 1/3, na.rm = TRUE)
+q67_bio <- quantile(d_bio$score, probs = 2/3, na.rm = TRUE)
+
+p_ess_bio <- ggdensity(
+  d_bio,
+  x = "score", fill = colors_biological, color = colors_biological, alpha = 0.4
+) +
+  geom_vline(xintercept = q33_bio, linetype = "dashed", color = colors_biological, linewidth = 0.6) +
+  geom_vline(xintercept = q67_bio, linetype = "dashed", color = colors_biological, linewidth = 0.6) +
+  coord_cartesian(xlim = c(1, 5)) + scale_x_continuous(breaks = 1:5, labels = c("Strongly\nDisagree (1)", "(2)", "(3)", "(4)", "Strongly\nAgree (5)")) +
+  labs(title = "Biological Essentialism", x = "Composite Score", y = "Density") +
+  theme_minimal() + theme(legend.position = "none")
+
+p_ess_cat + p_ess_bio +
+  plot_annotation(
+    title = "All Participants: Essentialist Beliefs about Addiction",
+    subtitle = "Dashed lines = 33rd and 67th percentiles"
+  )
+```
+
+---
+
+## References {.unnumbered}
+
+Graham, J., Nosek, B. A., Haidt, J., Iyer, R., Koleva, S., & Ditto, P. H. (2011). Mapping the moral domain. *Journal of Personality and Social Psychology*, *101*(2), 366--385. <https://doi.org/10.1037/a0021847>
+
+Knettel, B. A. (2019). Exploring diverse conceptions of mental health and mental illness. In *Developing, Delivering, and Sustaining School Counseling Practices through a Culturally Affirming Lens*. Information Age Publishing.
