@@ -1,7 +1,7 @@
-# Economic/Commercial Beliefs {#sec-wealth-cdoh}
+# Economic/Commercial Beliefs {#sec-economic-commercial}
 
 ```{r}
-#| label: setup-ch7
+#| label: setup-ch9
 #| include: false
 
 library(tidyverse)
@@ -21,7 +21,7 @@ add_percentile <- function(x) {
   paste0(pct, "% (", label, ")")
 }
 
-# ---- Color Palette for Chapter 7 ----
+# ---- Color Palette for Chapter 9 ----
 # Wealth Distribution
 colors_perceived  <- "#264653"   # dark teal — Perceived distribution
 colors_desired    <- "#2a9d8f"   # teal — Desired distribution

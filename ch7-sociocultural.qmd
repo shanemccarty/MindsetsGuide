@@ -1,7 +1,7 @@
-# Sociocultural Beliefs {#sec-culture-identity}
+# Sociocultural Beliefs {#sec-sociocultural-beliefs}
 
 ```{r}
-#| label: setup-ch5
+#| label: setup-ch7
 #| include: false
 
 library(tidyverse)
@@ -21,7 +21,7 @@ add_percentile <- function(x) {
   paste0(pct, "% (", label, ")")
 }
 
-# ---- Color Palette for Chapter 5 ----
+# ---- Color Palette for Chapter 7 ----
 # Individualism vs. Collectivism — 4 colors
 colors_hi <- "#ee6c4d"   # warm orange — Horizontal Individualism
 colors_vi <- "#293241"   # dark navy — Vertical Individualism

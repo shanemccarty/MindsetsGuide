@@ -1,7 +1,7 @@
 # Regulatory Focus {#sec-regulatory-focus}
 
 ```{r}
-#| label: setup-ch1
+#| label: setup-ch3
 #| include: false
 
 library(tidyverse)
@@ -21,7 +21,7 @@ add_percentile <- function(x) {
   paste0(pct, "% (", label, ")")
 }
 
-# ---- Color Palette for Chapter 1 ----
+# ---- Color Palette for Chapter 3 ----
 # Promotion / Prevention colors (shared across all 3 measures)
 colors_promo   <- "#8297ce"   # soft blue — promotion
 colors_prev    <- "#453a98"   # deep indigo — prevention
@@ -508,8 +508,8 @@ p_pro_care + p_pro_harm +
 ## Chapter Summary: All Regulatory Focus Measures {.unnumbered}
 
 ```{r}
-#| label: ch1-patchwork-summary
-#| fig-cap: "Chapter 1 Summary: All six motivational mindset subscales across the three regulatory focus measures."
+#| label: ch3-patchwork-summary
+#| fig-cap: "Chapter 3 Summary: All six regulatory focus subscales across the three regulatory focus measures."
 #| fig-width: 12
 #| fig-height: 10
 

@@ -1,7 +1,7 @@
-# Health Attributions & Morality {#sec-moral-foundations}
+# Health Attributions & Morality {#sec-health-attributions-morality}
 
 ```{r}
-#| label: setup-ch4
+#| label: setup-ch6
 #| include: false
 
 library(tidyverse)
@@ -21,7 +21,7 @@ add_percentile <- function(x) {
   paste0(pct, "% (", label, ")")
 }
 
-# ---- Color Palette for Chapter 4 ----
+# ---- Color Palette for Chapter 6 ----
 # Moral Foundations — 5 distinct colors
 colors_harm      <- "#e63946"   # red — Harm/Care
 colors_fairness  <- "#457b9d"   # steel blue — Fairness/Reciprocity

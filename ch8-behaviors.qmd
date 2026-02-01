@@ -1,4 +1,4 @@
-# Health Behaviors {#sec-social-media}
+# Health Behaviors {#sec-health-behaviors}
 
 ```{r}
 #| label: setup-ch8

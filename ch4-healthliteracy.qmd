@@ -1,7 +1,7 @@
 # Health Literacy {#sec-health-literacy}
 
 ```{r}
-#| label: setup-ch2
+#| label: setup-ch4
 #| include: false
 
 library(tidyverse)
