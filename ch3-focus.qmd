@@ -111,7 +111,7 @@ The RFQ contains 11 items (6 promotion, 5 prevention) rated on a 5-point scale: 
 **Example items:**
 
 - [Promotion]{style="color: #8297ce;"}: *"How often have you accomplished things that got you 'psyched' to work even harder?"*
-- [Prevention]{style="color: #453a98;"}: *"Compared to most people, are you typically unable to get what you want out of life?"* (reverse-scored)
+- [Prevention]{style="color: #453a98;"}: *"How often did you obey rules and regulations that were established by your parents?"*
 
 ```{r}
 #| label: rfq-compute
