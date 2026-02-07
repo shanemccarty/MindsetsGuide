@@ -81,7 +81,7 @@ This week explores how health literacy levels influence the accessibility and im
 
 ### Constructs {.unnumbered}
 
-The **Health Literacy Scale** (adapted from the [European Health Literacy Survey (HLS-EU)](https://health-literacy.eu/)) measures your self-assessed ability to navigate health information. Health literacy encompasses the knowledge, motivation, and competencies needed to access, understand, appraise, and apply health information in everyday life.
+The **Health Literacy Scale** ([Abel et al., 2015](appendix.qmd#sec-appendix)) measures your self-assessed ability to navigate health information. Health literacy encompasses the knowledge, motivation, and competencies needed to access, understand, appraise, and apply health information in everyday life.
 
 ### Measures {.unnumbered}
 

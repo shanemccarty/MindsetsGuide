@@ -177,6 +177,8 @@ Scale: 1 (*Totally Disagree*) to 7 (*Totally Agree*). Higher scores = more probl
 
 ## References
 
+Abel, T., Hofmann, K., Ackermann, S., Bucher, S., & Sakarya, S. (2015). Health literacy among young adults: A short survey tool for public health and health promotion research. *Health Promotion International*, *30*(3), 725--735. <https://doi.org/10.1093/heapro/dat096>
+
 Andreassen, C. S., Torsheim, T., Brunborg, G. S., & Pallesen, S. (2012). Development of a Facebook addiction scale. *Psychological Reports*, *110*(2), 501--517. <https://doi.org/10.2466/02.09.18.PR0.110.2.501-517>
 
 Eurich, T. (2017). *Insight: The surprising truth about how others see us, how we see ourselves, and why the answers matter more than we think*. Crown Business.
