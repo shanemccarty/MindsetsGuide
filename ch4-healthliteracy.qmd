@@ -90,7 +90,13 @@ The scale contains 8 items rated on a 5-point scale: 1 = *Very Bad*, 2 = *Bad*, 
 **Example items:**
 
 - *"How well do you understand instruction leaflets for medication?"*
+- *"How well do you understand information brochures on health issues?"*
 - *"When I have questions on diseases or complaints, I know where I can find information on these issues."*
+- *"When I want to do something for my health without being sick, I know where I can find information on these issues."*
+- *"How often were you able to help your family members or a friend if they had questions concerning health issues?"*
+- *"When you came up with questions concerning health issues, how often were you able to get information and advice from others (family and friends)?"*
+- *"How well are you doing in choosing the advices and offers that fit with you the most?"*
+- *"Regarding information on health on the Internet, I'm able to determine which sources are of high and which of poor quality."*
 
 ```{r}
 #| label: literacy-compute
