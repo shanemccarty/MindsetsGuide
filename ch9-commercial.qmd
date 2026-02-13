@@ -171,19 +171,22 @@ kbl(
 #| fig-width: 10
 #| fig-height: 6
 
-# Calculate average perceived and desired
+# Calculate average perceived and normalize to 100%
 avg_perceived <- wealth_data %>%
   summarise(across(starts_with("WEALTHDISTRIBUTION_"), ~ mean(., na.rm = TRUE))) %>%
   pivot_longer(everything(), names_to = "quintile", values_to = "pct") %>%
   mutate(
+    pct = pct / sum(pct) * 100,  # Normalize to 100%
     quintile_label = c("Top 20%", "2nd 20%", "3rd 20%", "4th 20%", "Bottom 20%"),
     type = "Perceived"
   )
 
+# Calculate average desired and normalize to 100%
 avg_desired <- wealth_data %>%
   summarise(across(starts_with("DESIREDWEALTHDISTRIB_"), ~ mean(., na.rm = TRUE))) %>%
   pivot_longer(everything(), names_to = "quintile", values_to = "pct") %>%
   mutate(
+    pct = pct / sum(pct) * 100,  # Normalize to 100%
     quintile_label = c("Top 20%", "2nd 20%", "3rd 20%", "4th 20%", "Bottom 20%"),
     type = "Desired"
   )
